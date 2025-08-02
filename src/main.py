@@ -173,6 +173,12 @@ Examples:
         help='Run health check and exit'
     )
     
+    parser.add_argument(
+        '--web',
+        action='store_true',
+        help='Run as web service'
+    )
+    
     args = parser.parse_args()
     
     # Setup logging
@@ -189,6 +195,14 @@ Examples:
             result = system.check_system_health()
             print(f"System Status: {result['status']}")
             return 0 if result['status'] == 'healthy' else 1
+            
+        # Web service mode
+        if args.web:
+            print("Starting web service...")
+            from web_app import app
+            port = int(os.environ.get('PORT', 5000))
+            app.run(host='0.0.0.0', port=port)
+            return 0
             
         # Batch mode
         if args.command:

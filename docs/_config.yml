@@ -1,0 +1,5 @@
+theme: jekyll-theme-cayman
+title: 카페24 쇼핑몰 자동화 시스템
+description: 한국어 자연어 명령으로 쇼핑몰을 관리하는 혁신적인 솔루션
+show_downloads: true
+google_analytics:

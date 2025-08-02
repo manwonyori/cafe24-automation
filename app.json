@@ -1,0 +1,55 @@
+{
+  "name": "Cafe24 Automation System",
+  "description": "카페24 쇼핑몰 완전 자동화 시스템 - 한국어 자연어 명령으로 쇼핑몰 관리",
+  "repository": "https://github.com/yourusername/cafe24",
+  "logo": "https://raw.githubusercontent.com/yourusername/cafe24/main/docs/logo.png",
+  "keywords": ["cafe24", "e-commerce", "automation", "korean", "api"],
+  "addons": [
+    {
+      "plan": "heroku-redis:mini"
+    }
+  ],
+  "env": {
+    "CAFE24_MALL_ID": {
+      "description": "Your Cafe24 Mall ID (카페24 몰 아이디)",
+      "required": true
+    },
+    "CAFE24_CLIENT_ID": {
+      "description": "Your Cafe24 API Client ID (API 클라이언트 ID)",
+      "required": true
+    },
+    "CAFE24_CLIENT_SECRET": {
+      "description": "Your Cafe24 API Client Secret (API 시크릿 키)",
+      "required": true
+    },
+    "CAFE24_API_VERSION": {
+      "description": "Cafe24 API Version (API 버전)",
+      "value": "2025-06-01",
+      "required": false
+    },
+    "CAFE24_CACHE_ENABLED": {
+      "description": "Enable caching for better performance (캐싱 활성화)",
+      "value": "true",
+      "required": false
+    },
+    "CAFE24_LOG_LEVEL": {
+      "description": "Log level (로그 레벨)",
+      "value": "INFO",
+      "required": false
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "scripts": {
+    "postdeploy": "python src/main.py --health-check"
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ]
+}

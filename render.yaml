@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: cafe24-automation
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python src/main.py
+    envVars:
+      - key: CAFE24_MALL_ID
+        sync: false
+        prompt: true
+      - key: CAFE24_CLIENT_ID
+        sync: false
+        prompt: true
+      - key: CAFE24_CLIENT_SECRET
+        sync: false
+        prompt: true
+      - key: CAFE24_API_VERSION
+        value: 2025-06-01
+      - key: CAFE24_CACHE_ENABLED
+        value: true
+      - key: CAFE24_LOG_LEVEL
+        value: INFO
+      - key: PYTHON_VERSION
+        value: 3.11.0
+    healthCheckPath: /health
+    autoDeploy: true
+    
+  - type: redis
+    name: cafe24-redis
+    ipAllowList: []
+    plan: free
+    
+databases: []
