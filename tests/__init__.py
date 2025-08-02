@@ -1,0 +1,1 @@
+"""Test suite for Cafe24 Automation System"""
