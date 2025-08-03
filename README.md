@@ -42,17 +42,17 @@
 
 ### 원클릭 배포
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/yourusername/cafe24)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/manwonyori/cafe24)
 
-[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/yourusername/cafe24)
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/manwonyori/cafe24)
 
-[![Deploy to Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/yourusername/cafe24)
+[![Deploy to Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/manwonyori/cafe24)
 
 ### 로컬 설치 (5분 소요)
 
 1. **프로젝트 클론**
 ```bash
-git clone https://github.com/yourusername/cafe24.git
+git clone https://github.com/manwonyori/cafe24.git
 cd cafe24
 ```
 
@@ -220,9 +220,9 @@ MIT License - 자유롭게 사용하세요!
 
 ## 📞 지원
 
-- **이슈**: [GitHub Issues](https://github.com/yourusername/cafe24/issues)
+- **이슈**: [GitHub Issues](https://github.com/manwonyori/cafe24/issues)
 - **이메일**: support@example.com
-- **문서**: [상세 문서](https://yourusername.github.io/cafe24)
+- **문서**: [상세 문서](https://manwonyori.github.io/cafe24)
 
 ---
 

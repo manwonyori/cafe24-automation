@@ -12,11 +12,15 @@ import logging
 from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 
-from .api_client import Cafe24APIClient
-from .nlp_processor import NaturalLanguageProcessor
-from .cache_manager import CacheManager
-from .utils.health_checker import HealthChecker
-from .utils.report_generator import ReportGenerator
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from api_client import Cafe24APIClient
+from nlp_processor import NaturalLanguageProcessor
+from cache_manager import CacheManager
+from utils.health_checker import HealthChecker
+from utils.report_generator import ReportGenerator
 
 
 class Cafe24System:
