@@ -3,7 +3,7 @@ services:
     name: cafe24-automation
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python src/main.py
+    startCommand: python src/web_app.py
     envVars:
       - key: CAFE24_MALL_ID
         sync: false
