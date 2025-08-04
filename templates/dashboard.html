@@ -467,6 +467,10 @@
                         <option value="20">20개</option>
                         <option value="50">50개</option>
                         <option value="100" selected>100개</option>
+                        <option value="200">200개</option>
+                        <option value="500">500개</option>
+                        <option value="1000">1000개</option>
+                        <option value="9999">전체보기</option>
                     </select>
                 </div>
             </div>
@@ -482,7 +486,7 @@
                 <div class="stat-icon blue">📦</div>
                 <div class="stat-title">전체 상품</div>
                 <div class="stat-value" id="totalProducts">-</div>
-                <div class="stat-change">총 상품 수</div>
+                <div class="stat-change" id="totalProductsDesc">총 상품 수</div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon green">💰</div>
@@ -508,6 +512,7 @@
         <div class="action-buttons">
             <button class="btn btn-success" onclick="showExportModal()">📥 내보내기</button>
             <button class="btn btn-primary" onclick="analyzeProducts()">📊 상품 분석</button>
+            <button class="btn btn-primary" onclick="viewAllProducts()">📋 전체 상품 보기</button>
             <button class="btn btn-secondary" onclick="refreshData()">🔄 새로고침</button>
         </div>
         
@@ -718,6 +723,15 @@
             document.getElementById('totalProducts').textContent = stats.total_products || '0';
             document.getElementById('lowStock').textContent = stats.low_stock || '0';
             document.getElementById('outOfStock').textContent = stats.out_of_stock || '0';
+            
+            // 현재 표시 상태 업데이트
+            const pageSize = document.getElementById('pageSize').value;
+            const displayed = currentProducts.length;
+            if (pageSize === '9999') {
+                document.getElementById('totalProductsDesc').textContent = '전체 상품 표시중';
+            } else if (displayed < stats.total_products) {
+                document.getElementById('totalProductsDesc').textContent = `${displayed}개 표시중`;
+            }
         }
         
         // 페이지네이션 업데이트
@@ -744,7 +758,12 @@
             // 페이지 정보
             const pageInfo = document.createElement('span');
             pageInfo.style.margin = '0 20px';
-            pageInfo.textContent = `페이지 ${currentPage}`;
+            const pageSize = document.getElementById('pageSize').value;
+            if (pageSize === '9999') {
+                pageInfo.textContent = '전체 상품 표시중';
+            } else {
+                pageInfo.textContent = `페이지 ${currentPage}`;
+            }
             paginationDiv.appendChild(pageInfo);
             
             // 다음 페이지
@@ -965,6 +984,13 @@
         function refreshData() {
             loadProducts();
             loadTodayOrders();
+        }
+        
+        // 전체 상품 보기
+        function viewAllProducts() {
+            document.getElementById('pageSize').value = '9999';
+            currentOffset = 0;
+            loadProducts();
         }
         
         // Enter 키로 검색/명령 실행

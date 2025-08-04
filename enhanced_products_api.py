@@ -35,7 +35,11 @@ class ProductAPI:
             params = {}
             
             # 1. 페이지네이션 파라미터
-            params['limit'] = request.args.get('limit', 100, type=int)
+            limit = request.args.get('limit', 100, type=int)
+            # 전체보기인 경우 최대값 설정
+            if limit >= 9999:
+                limit = 10000  # Cafe24 API 최대 한도
+            params['limit'] = limit
             params['offset'] = request.args.get('offset', 0, type=int)
             
             # 2. 필드 선택 (성능 최적화)
@@ -632,11 +636,70 @@ class ProductAPI:
                 
         except Exception as e:
             return jsonify({'success': False, 'error': str(e)}), 500
+    
+    def get_all_products(self):
+        """모든 상품 가져오기 (페이지네이션 자동 처리)"""
+        try:
+            headers = self.get_headers()
+            url = self._get_base_url()
+            
+            all_products = []
+            offset = 0
+            limit = 100
+            
+            while True:
+                params = {
+                    'limit': limit,
+                    'offset': offset,
+                    'fields': 'product_no,product_code,product_name,price,quantity,display,created_date,brand_code'
+                }
+                
+                response = requests.get(url, headers=headers, params=params)
+                if response.status_code != 200:
+                    break
+                
+                data = response.json()
+                products = data.get('products', [])
+                
+                if not products:
+                    break
+                
+                all_products.extend(products)
+                offset += limit
+                
+                # 더 이상 상품이 없으면 중단
+                if len(products) < limit:
+                    break
+                
+                # 안전 장치: 최대 10000개까지만
+                if len(all_products) >= 10000:
+                    break
+            
+            # 통계 계산
+            stats = {
+                'total_products': len(all_products),
+                'out_of_stock': len([p for p in all_products if int(p.get('quantity', 0)) == 0]),
+                'low_stock': len([p for p in all_products if 0 < int(p.get('quantity', 0)) < 10]),
+                'displayed': len([p for p in all_products if p.get('display') == 'T']),
+                'hidden': len([p for p in all_products if p.get('display') == 'F'])
+            }
+            
+            return jsonify({
+                'success': True,
+                'products': all_products,
+                'count': len(all_products),
+                'stats': stats,
+                'message': f'전체 {len(all_products)}개 상품을 불러왔습니다.'
+            })
+            
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
 
 # 블루프린트 라우트 설정
 def register_routes(bp, api):
     """라우트 등록"""
     bp.add_url_rule('/advanced', 'get_products_advanced', api.get_products_advanced, methods=['GET'])
+    bp.add_url_rule('/all', 'get_all_products', api.get_all_products, methods=['GET'])
     bp.add_url_rule('/search', 'search_products', api.search_products, methods=['POST'])
     bp.add_url_rule('/<int:product_no>/variants', 'get_product_variants', api.get_product_variants, methods=['GET'])
     bp.add_url_rule('/bulk-update', 'bulk_update_products', api.bulk_update_products, methods=['POST'])
