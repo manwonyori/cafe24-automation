@@ -49,6 +49,71 @@ def dashboard():
     """대시보드 페이지"""
     return render_template('dashboard.html')
 
+@app.route('/api/command', methods=['POST'])
+def process_command():
+    """자연어 명령 처리"""
+    try:
+        from nlp_processor import NLPProcessor
+        
+        data = request.get_json()
+        command = data.get('command', '')
+        
+        if not command:
+            return jsonify({'success': False, 'error': '명령어를 입력하세요'}), 400
+        
+        # NLP 처리
+        processor = NLPProcessor()
+        result = processor.process(command)
+        
+        # 명령 실행
+        if result['action'] == 'list_products':
+            return get_products()
+        elif result['action'] == 'list_orders':
+            return get_today_orders()
+        elif result['action'] == 'check_inventory':
+            params = result['parameters']
+            threshold = params.get('limit', 10)
+            return get_low_stock()
+        elif result['action'] == 'sales_report':
+            from report_generator import ReportGenerator
+            import requests as req
+            generator = ReportGenerator(req)
+            report = generator.generate_daily_report()
+            return jsonify({'success': True, 'report': report})
+        else:
+            return jsonify({
+                'success': False, 
+                'error': '알 수 없는 명령입니다',
+                'parsed': result
+            }), 400
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/report/<report_type>', methods=['GET'])
+def generate_report(report_type):
+    """리포트 생성"""
+    try:
+        from report_generator import ReportGenerator
+        import requests as req
+        
+        generator = ReportGenerator(req)
+        
+        if report_type == 'daily':
+            report = generator.generate_daily_report()
+        elif report_type == 'inventory':
+            report = generator.generate_inventory_report()
+        elif report_type == 'sales':
+            days = request.args.get('days', 30, type=int)
+            report = generator.generate_sales_report(days)
+        else:
+            return jsonify({'success': False, 'error': 'Invalid report type'}), 400
+        
+        return jsonify({'success': True, 'report': report})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/status')
 def api_status():
     """API 상태 확인"""

@@ -77,6 +77,17 @@
             <p>실시간 쇼핑몰 데이터 모니터링</p>
         </div>
 
+        <!-- 자연어 명령 입력 -->
+        <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+            <h3>🤖 자연어 명령</h3>
+            <p style="color: #666; font-size: 14px;">한국어로 명령을 입력하세요. 예: "오늘 주문 보여줘", "재고 부족 상품", "매출 리포트"</p>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="commandInput" placeholder="명령을 입력하세요..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                <button onclick="executeCommand()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">실행</button>
+            </div>
+            <div id="commandResult" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px; display: none;"></div>
+        </div>
+
         <div class="stats">
             <div class="stat-card">
                 <div class="stat-title">오늘 주문</div>
@@ -170,6 +181,60 @@
                 document.getElementById('totalProducts').textContent = '오류';
             }
         }
+
+        // 자연어 명령 실행
+        async function executeCommand() {
+            const input = document.getElementById('commandInput');
+            const resultDiv = document.getElementById('commandResult');
+            const command = input.value.trim();
+            
+            if (!command) return;
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '처리 중...';
+            
+            try {
+                const response = await fetch('/api/command', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({command: command})
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.style.background = '#d4edda';
+                    resultDiv.style.color = '#155724';
+                    
+                    // 결과에 따라 다른 처리
+                    if (data.products) {
+                        resultDiv.innerHTML = `<strong>상품 ${data.count}개 조회됨</strong>`;
+                        // 테이블 업데이트
+                        loadProducts();
+                    } else if (data.orders) {
+                        resultDiv.innerHTML = `<strong>주문 ${data.count}건, 총 ₩${data.total_amount.toLocaleString()}</strong>`;
+                        loadTodayOrders();
+                    } else if (data.report) {
+                        resultDiv.innerHTML = `<strong>리포트 생성 완료</strong><pre>${JSON.stringify(data.report, null, 2)}</pre>`;
+                    } else {
+                        resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    }
+                } else {
+                    resultDiv.style.background = '#f8d7da';
+                    resultDiv.style.color = '#721c24';
+                    resultDiv.innerHTML = `오류: ${data.error}`;
+                }
+            } catch (error) {
+                resultDiv.style.background = '#f8d7da';
+                resultDiv.style.color = '#721c24';
+                resultDiv.innerHTML = `오류: ${error.message}`;
+            }
+        }
+        
+        // Enter 키로 실행
+        document.getElementById('commandInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') executeCommand();
+        });
 
         // 페이지 로드 시 데이터 불러오기
         window.addEventListener('load', () => {
