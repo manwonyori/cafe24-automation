@@ -1,0 +1,11 @@
+
+# GitHub 레포지토리 파일 확인 명령:
+
+cd cafe24
+git status
+git ls-files | grep -E "(oauth_manager|api_client|demo_mode)"
+
+# 만약 파일이 없다면:
+git add src/oauth_manager.py src/api_client.py src/demo_mode.py
+git commit -m "Add missing API files"
+git push

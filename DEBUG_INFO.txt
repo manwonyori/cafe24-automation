@@ -1,0 +1,19 @@
+
+DEBUGGING CHECKLIST:
+
+1. Check Render Logs:
+   - Look for "KeyError" messages
+   - Check for "ImportError" messages
+   - Look for "CAFE24_ACCESS_TOKEN" errors
+
+2. Common Issues:
+   - Token format: Your token is 22 characters (should be 22)
+   - Environment loading: PYTHONPATH must be set
+   - Module imports: src folder must be in Python path
+
+3. If still failing after deploy:
+   - The token might be invalid
+   - Get new token from https://developers.cafe24.com
+   - Update CAFE24_ACCESS_TOKEN in Render
+
+Your current token: lCr5kG66Dt...PedtH
