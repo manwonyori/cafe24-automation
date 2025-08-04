@@ -9,15 +9,9 @@ import json
 import os
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
+from config import OAUTH_CONFIG
 
 oauth_bp = Blueprint('oauth', __name__)
-
-# OAuth 설정
-OAUTH_CONFIG = {
-    'client_id': os.environ.get('CAFE24_CLIENT_ID', 'kRnyoXA8DBsfJGYjjHhOyC'),
-    'redirect_uri': os.environ.get('CAFE24_REDIRECT_URI', 'https://cafe24-automation.onrender.com/auth/callback'),
-    'scope': 'mall.read_product,mall.write_product,mall.read_order,mall.read_supply,mall.write_supply'
-}
 
 @oauth_bp.route('/auth')
 def auth():

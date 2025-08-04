@@ -120,23 +120,46 @@ class Cafe24AutoTokenManager:
     
     def check_and_refresh(self):
         """토큰 상태 확인 후 필요시 갱신"""
-        if not self.token_data:
-            return
+        try:
+            if not self.token_data:
+                print("[INFO] 토큰 데이터 없음 - 갱신 스킵")
+                return
+                
+            expires_at = datetime.fromisoformat(self.token_data['expires_at'].replace('.000', ''))
+            now = datetime.now()
+            remaining_minutes = (expires_at - now).total_seconds() / 60
             
-        expires_at = datetime.fromisoformat(self.token_data['expires_at'].replace('.000', ''))
-        now = datetime.now()
-        
-        # 30분 여유를 두고 갱신
-        if now > (expires_at - timedelta(minutes=30)):
-            self.refresh_token()
+            print(f"[INFO] 토큰 체크: 남은 시간 {remaining_minutes:.1f}분")
+            
+            # config에서 정의한 버퍼 시간을 두고 갱신
+            try:
+                from config import TOKEN_REFRESH_BUFFER
+                buffer = TOKEN_REFRESH_BUFFER
+            except:
+                buffer = 30  # 기본값
+                
+            if remaining_minutes < buffer:
+                print(f"[INFO] 토큰 만료 임박 - 자동 갱신 시작")
+                if self.refresh_token():
+                    print(f"[SUCCESS] 토큰 자동 갱신 완료")
+                else:
+                    print(f"[ERROR] 토큰 자동 갱신 실패")
+        except Exception as e:
+            print(f"[ERROR] 토큰 체크 중 오류: {str(e)}")
     
     def start_auto_refresh(self):
         """백그라운드 자동 갱신 시작"""
         self.running = True
         
-        # 스케줄 설정: 30분마다 체크
-        schedule.every(30).minutes.do(self.check_and_refresh)
-        print(f"✓ 자동 토큰 갱신 설정: 30분마다 실행")
+        # 스케줄 설정: config에서 정의한 간격으로 체크
+        try:
+            from config import TOKEN_REFRESH_INTERVAL
+            interval = TOKEN_REFRESH_INTERVAL
+        except:
+            interval = 30  # 기본값
+            
+        schedule.every(interval).minutes.do(self.check_and_refresh)
+        print(f"✓ 자동 토큰 갱신 설정: {interval}분마다 실행")
         
         # 즉시 한 번 체크
         self.check_and_refresh()

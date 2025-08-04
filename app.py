@@ -14,6 +14,7 @@ from pathlib import Path
 import logging
 from functools import wraps
 import time
+from config import CAFE24_API_VERSION, DEFAULT_MALL_ID, API_CACHE_DURATION
 
 # 로깅 설정
 logging.basicConfig(
@@ -61,7 +62,7 @@ def handle_errors(f):
 
 # API 응답 캐싱
 cache = {}
-CACHE_DURATION = 60  # 1분
+CACHE_DURATION = API_CACHE_DURATION  # config.py에서 관리
 
 def get_cached_or_fetch(key, fetch_function, *args, **kwargs):
     """캐시에서 가져오거나 새로 fetch"""
@@ -460,7 +461,7 @@ def get_mall_id():
             token_data = json.load(f)
         return token_data.get('mall_id')
     except:
-        return 'manwonyori'
+        return DEFAULT_MALL_ID  # config.py에서 관리
 
 def get_headers():
     """API 헤더 가져오기 (자동 토큰 갱신 포함)"""
@@ -497,7 +498,7 @@ def get_headers():
     return {
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json',
-        'X-Cafe24-Api-Version': '2024-06-01'
+        'X-Cafe24-Api-Version': CAFE24_API_VERSION  # config.py에서 관리
     }
 
 # Enhanced Product API 초기화 (함수 정의 후에)
