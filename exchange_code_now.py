@@ -9,7 +9,7 @@ import base64
 from datetime import datetime, timedelta
 
 # 받은 인증 코드
-AUTH_CODE = "YswhX471LN3iHeCfe6tmTP"
+AUTH_CODE = "rws4GibMBVMjibIuxESxED"
 
 def exchange_token():
     """토큰 교환"""

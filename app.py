@@ -44,6 +44,11 @@ def health():
     """헬스체크 엔드포인트"""
     return jsonify({'status': 'healthy'}), 200
 
+@app.route('/dashboard')
+def dashboard():
+    """대시보드 페이지"""
+    return render_template('dashboard.html')
+
 @app.route('/api/status')
 def api_status():
     """API 상태 확인"""
