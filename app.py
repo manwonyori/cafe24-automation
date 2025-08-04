@@ -21,8 +21,8 @@ token_manager.start_auto_refresh()
 
 # Flask 앱 생성
 app = Flask(__name__, 
-    template_folder='src/web/templates',
-    static_folder='src/web/static'
+    template_folder='templates',
+    static_folder='static'
 )
 
 @app.route('/')
