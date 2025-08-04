@@ -45,7 +45,7 @@
         }
         
         /* 자연어 명령 섹션 */
-        .command-section {
+        .quick-filters-section {
             background: white;
             padding: 20px;
             border-radius: 12px;
@@ -53,33 +53,24 @@
             margin-bottom: 25px;
         }
         
-        .command-section h3 {
-            margin-bottom: 10px;
+        .quick-filters-section h3 {
+            margin-bottom: 15px;
             color: #333;
         }
         
-        .command-section p {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 15px;
-        }
-        
-        .command-input-group {
+        .quick-filter-buttons {
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
         }
         
-        .command-input {
-            flex: 1;
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
+        .btn-warning {
+            background: #fbbc04;
+            color: white;
         }
         
-        .command-input:focus {
-            outline: none;
-            border-color: #1a73e8;
+        .btn-warning:hover {
+            background: #ea9d00;
         }
         
         /* 필터 섹션 */
@@ -417,15 +408,19 @@
             <p>모든 상품 관리 기능을 한 곳에서 - 실시간 모니터링, 필터링, 대량 수정, 내보내기</p>
         </div>
         
-        <!-- 자연어 명령 -->
-        <div class="command-section">
-            <h3>🤖 자연어 명령</h3>
-            <p>한국어로 명령을 입력하세요. 예: "오늘 주문 보여줘", "재고 부족 상품", "매출 리포트"</p>
-            <div class="command-input-group">
-                <input type="text" id="commandInput" class="command-input" placeholder="명령을 입력하세요...">
-                <button class="btn btn-primary" onclick="executeCommand()">실행</button>
+        <!-- 빠른 필터 버튼 -->
+        <div class="quick-filters-section">
+            <h3>🎯 빠른 필터</h3>
+            <div class="quick-filter-buttons">
+                <button class="btn btn-secondary" onclick="filterByCategory('[인생]')">인생</button>
+                <button class="btn btn-secondary" onclick="filterByCategory('[부산]')">부산</button>
+                <button class="btn btn-secondary" onclick="filterByCategory('[식품]')">식품</button>
+                <button class="btn btn-secondary" onclick="filterByCategory('[음료]')">음료</button>
+                <button class="btn btn-secondary" onclick="filterByCategory('[생활]')">생활</button>
+                <button class="btn btn-danger" onclick="showOutOfStock()">품절 상품</button>
+                <button class="btn btn-warning" onclick="showLowStock()">재고 부족</button>
+                <button class="btn btn-primary" onclick="resetFilters()">전체 보기</button>
             </div>
-            <div id="commandResult" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px; display: none;"></div>
         </div>
         
         <!-- 필터 섹션 -->
@@ -443,6 +438,10 @@
                 <div class="filter-group">
                     <label>재고 수량 (최소)</label>
                     <input type="number" id="stockMin" placeholder="0">
+                </div>
+                <div class="filter-group">
+                    <label>재고 수량 (최대)</label>
+                    <input type="number" id="stockMax" placeholder="9999">
                 </div>
                 <div class="filter-group">
                     <label>진열 상태</label>
@@ -647,11 +646,13 @@
                 const priceMin = document.getElementById('priceMin').value;
                 const priceMax = document.getElementById('priceMax').value;
                 const stockMin = document.getElementById('stockMin').value;
+                const stockMax = document.getElementById('stockMax').value;
                 const display = document.getElementById('displayFilter').value;
                 
                 if (priceMin) params.append('price_min', priceMin);
                 if (priceMax) params.append('price_max', priceMax);
                 if (stockMin) params.append('stock_min', stockMin);
+                if (stockMax) params.append('stock_max', stockMax);
                 if (display) params.append('display', display);
                 
                 const response = await fetch(`/api/products?${params}`);
@@ -806,51 +807,28 @@
             }
         }
         
-        // 자연어 명령 실행
-        async function executeCommand() {
-            const input = document.getElementById('commandInput');
-            const resultDiv = document.getElementById('commandResult');
-            const command = input.value.trim();
-            
-            if (!command) return;
-            
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = '처리 중...';
-            
-            try {
-                const response = await fetch('/api/command', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({command: command})
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    resultDiv.style.background = '#d4edda';
-                    resultDiv.style.color = '#155724';
-                    
-                    if (data.products) {
-                        resultDiv.innerHTML = `<strong>상품 ${data.count}개 조회됨</strong>`;
-                        displayProducts(data.products);
-                    } else if (data.orders) {
-                        resultDiv.innerHTML = `<strong>주문 ${data.count}건, 총 ₩${data.total_amount.toLocaleString()}</strong>`;
-                        loadTodayOrders();
-                    } else if (data.report) {
-                        resultDiv.innerHTML = `<strong>리포트 생성 완료</strong><pre>${JSON.stringify(data.report, null, 2)}</pre>`;
-                    } else {
-                        resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-                    }
-                } else {
-                    resultDiv.style.background = '#f8d7da';
-                    resultDiv.style.color = '#721c24';
-                    resultDiv.innerHTML = `오류: ${data.error}`;
-                }
-            } catch (error) {
-                resultDiv.style.background = '#f8d7da';
-                resultDiv.style.color = '#721c24';
-                resultDiv.innerHTML = `오류: ${error.message}`;
-            }
+        // 카테고리별 필터
+        async function filterByCategory(category) {
+            currentOffset = 0;
+            const searchInput = document.getElementById('searchInput');
+            searchInput.value = category;
+            await searchProducts();
+        }
+        
+        // 품절 상품 보기
+        async function showOutOfStock() {
+            document.getElementById('stockMin').value = '';
+            document.getElementById('stockMax').value = '0';
+            currentOffset = 0;
+            await loadProducts();
+        }
+        
+        // 재고 부족 상품 보기
+        async function showLowStock() {
+            document.getElementById('stockMin').value = '1';
+            document.getElementById('stockMax').value = '10';
+            currentOffset = 0;
+            await loadProducts();
         }
         
         // 필터 적용
@@ -993,13 +971,9 @@
             loadProducts();
         }
         
-        // Enter 키로 검색/명령 실행
+        // Enter 키로 검색 실행
         document.getElementById('searchInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') searchProducts();
-        });
-        
-        document.getElementById('commandInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') executeCommand();
         });
     </script>
 </body>
