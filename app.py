@@ -497,7 +497,7 @@ def get_headers():
     return {
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json',
-        'X-Cafe24-Api-Version': '2025-01-01'
+        'X-Cafe24-Api-Version': '2024-06-01'
     }
 
 # Enhanced Product API 초기화 (함수 정의 후에)
