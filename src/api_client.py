@@ -202,6 +202,22 @@ class Cafe24APIClient:
         response = self._request('PUT', f'/products/{product_no}/inventory', data=data)
         return response.json()
         
+    # Customer APIs
+    def get_customers(self, **kwargs) -> List[Dict]:
+        """Get customers list"""
+        params = {
+            'limit': kwargs.get('limit', 100),
+            'offset': kwargs.get('offset', 0)
+        }
+        
+        response = self._request('GET', '/customers', params=params)
+        data = response.json()
+        
+        # Handle Cafe24 response format
+        if isinstance(data, dict) and 'customers' in data:
+            return data['customers']
+        return data
+        
     # Statistics APIs
     def get_sales_statistics(self, period: str = 'daily', 
                            start_date: Optional[str] = None,

@@ -284,3 +284,39 @@ class Cafe24System:
             'checks': checks,
             'timestamp': datetime.now().isoformat()
         }
+        
+    def get_customers(self, **kwargs) -> List[Dict]:
+        """Get customers list"""
+        # Check cache first
+        cache_key = f"customers:{json.dumps(kwargs, sort_keys=True)}"
+        cached = self.cache_manager.get(cache_key)
+        
+        if cached:
+            self.logger.info("Customers retrieved from cache")
+            return cached
+            
+        # Fetch from API
+        customers = self.api_client.get_customers(**kwargs)
+        
+        # Cache the results
+        self.cache_manager.set(cache_key, customers, ttl=300)  # 5 minutes cache
+        
+        return customers
+        
+    def get_sales_statistics(self, **kwargs) -> Dict[str, Any]:
+        """Get sales statistics"""
+        # Check cache first
+        cache_key = f"sales_stats:{json.dumps(kwargs, sort_keys=True)}"
+        cached = self.cache_manager.get(cache_key)
+        
+        if cached:
+            self.logger.info("Sales statistics retrieved from cache")
+            return cached
+            
+        # Fetch from API
+        stats = self.api_client.get_sales_statistics(**kwargs)
+        
+        # Cache the results for shorter time
+        self.cache_manager.set(cache_key, stats, ttl=300)  # 5 minutes cache
+        
+        return stats

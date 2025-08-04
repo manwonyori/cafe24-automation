@@ -167,11 +167,27 @@ def check_inventory():
     
     try:
         threshold = int(request.args.get('threshold', 10))
-        inventory = system.check_inventory(threshold=threshold)
+        
+        # 모든 상품 조회
+        all_products = system.get_products()
+        low_stock = []
+        out_of_stock = []
+        
+        for product in all_products:
+            quantity = product.get('inventory_quantity', 0)
+            if quantity == 0:
+                out_of_stock.append(product)
+            elif quantity <= threshold:
+                low_stock.append(product)
         
         return jsonify({
             'success': True,
-            'inventory': inventory
+            'threshold': threshold,
+            'low_stock': low_stock,
+            'out_of_stock': out_of_stock,
+            'low_stock_count': len(low_stock),
+            'out_of_stock_count': len(out_of_stock),
+            'total_products': len(all_products)
         })
         
     except Exception as e:
@@ -202,6 +218,160 @@ def generate_report(report_type):
             'success': False,
             'error': str(e)
         }), 500
+
+@app.route('/api/customers', methods=['GET'])
+def get_customers():
+    """Get customers list"""
+    if not system_initialized:
+        return jsonify({'error': 'System not initialized'}), 503
+    
+    try:
+        limit = int(request.args.get('limit', 100))
+        offset = int(request.args.get('offset', 0))
+        
+        customers = system.get_customers(limit=limit, offset=offset)
+        
+        return jsonify({
+            'success': True,
+            'count': len(customers),
+            'customers': customers
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/sales/statistics', methods=['GET'])
+def get_sales_statistics():
+    """Get sales statistics"""
+    if not system_initialized:
+        return jsonify({'error': 'System not initialized'}), 503
+    
+    try:
+        period = request.args.get('period', 'daily')
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        kwargs = {'period': period}
+        if start_date:
+            kwargs['start_date'] = start_date
+        if end_date:
+            kwargs['end_date'] = end_date
+            
+        stats = system.get_sales_statistics(**kwargs)
+        
+        return jsonify({
+            'success': True,
+            'statistics': stats
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/test/all', methods=['GET'])
+def test_all_endpoints():
+    """Test all API endpoints"""
+    results = {
+        'timestamp': datetime.now().isoformat(),
+        'system_initialized': system_initialized,
+        'tests': []
+    }
+    
+    # Define test cases
+    test_cases = [
+        {
+            'name': 'Health Check',
+            'endpoint': '/health',
+            'method': 'GET',
+            'expected_status': 200
+        },
+        {
+            'name': 'Products API',
+            'endpoint': '/api/products?limit=5',
+            'method': 'GET',
+            'expected_status': 200
+        },
+        {
+            'name': 'Orders API',
+            'endpoint': '/api/orders?limit=5',
+            'method': 'GET',
+            'expected_status': 200
+        },
+        {
+            'name': 'Inventory API',
+            'endpoint': '/api/inventory?threshold=10',
+            'method': 'GET',
+            'expected_status': 200
+        },
+        {
+            'name': 'Customers API',
+            'endpoint': '/api/customers?limit=5',
+            'method': 'GET',
+            'expected_status': 200
+        },
+        {
+            'name': 'Sales Statistics API',
+            'endpoint': '/api/sales/statistics?period=daily',
+            'method': 'GET',
+            'expected_status': 200
+        },
+        {
+            'name': 'Natural Language API',
+            'endpoint': '/api/execute',
+            'method': 'POST',
+            'data': {'command': '상품 목록 보여줘'},
+            'expected_status': 200
+        }
+    ]
+    
+    # Run tests
+    for test in test_cases:
+        try:
+            # Make internal request
+            with app.test_client() as client:
+                if test['method'] == 'GET':
+                    response = client.get(test['endpoint'])
+                else:
+                    response = client.post(
+                        test['endpoint'],
+                        json=test.get('data', {}),
+                        headers={'Content-Type': 'application/json'}
+                    )
+                
+                test_result = {
+                    'name': test['name'],
+                    'endpoint': test['endpoint'],
+                    'status': response.status_code,
+                    'success': response.status_code == test['expected_status'],
+                    'response': response.get_json()
+                }
+                
+                results['tests'].append(test_result)
+                
+        except Exception as e:
+            results['tests'].append({
+                'name': test['name'],
+                'endpoint': test['endpoint'],
+                'success': False,
+                'error': str(e)
+            })
+    
+    # Summary
+    total_tests = len(results['tests'])
+    passed_tests = sum(1 for t in results['tests'] if t.get('success', False))
+    results['summary'] = {
+        'total': total_tests,
+        'passed': passed_tests,
+        'failed': total_tests - passed_tests,
+        'success_rate': f"{(passed_tests/total_tests*100):.1f}%" if total_tests > 0 else "0%"
+    }
+    
+    return jsonify(results)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
