@@ -8,7 +8,7 @@ Provides REST API and health check endpoints
 import os
 import json
 import logging
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from datetime import datetime
 
@@ -32,7 +32,12 @@ except Exception as e:
 
 @app.route('/')
 def home():
-    """Home endpoint"""
+    """Home endpoint - Return dashboard if browser, JSON if API"""
+    # Check if request is from browser
+    if request.headers.get('Accept', '').find('text/html') != -1:
+        return render_template('dashboard.html')
+    
+    # Return JSON for API requests
     mode = 'demo' if hasattr(system, 'demo_mode') and system.demo_mode else 'production'
     
     return jsonify({
