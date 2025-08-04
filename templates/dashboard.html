@@ -391,6 +391,17 @@
             color: #666;
         }
         
+        /* 버튼 그룹 스타일 */
+        .btn-group {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+        
         /* 반응형 */
         @media (max-width: 768px) {
             .filters-grid {
@@ -506,6 +517,12 @@
                 <div class="stat-change" id="todayOrders">주문 0건</div>
             </div>
             <div class="stat-card">
+                <div class="stat-icon blue">📊</div>
+                <div class="stat-title">이번달 매출</div>
+                <div class="stat-value" id="monthSales">-</div>
+                <div class="stat-change" id="monthGrowth">전월 대비 -</div>
+            </div>
+            <div class="stat-card">
                 <div class="stat-icon orange">⚠️</div>
                 <div class="stat-title">재고 부족</div>
                 <div class="stat-value" id="lowStock">-</div>
@@ -526,6 +543,49 @@
             <button class="btn btn-warning" onclick="showTemplateModal()">📑 엑셀 템플릿</button>
             <button class="btn btn-primary" onclick="viewAllProducts()">📋 전체 상품 보기</button>
             <button class="btn btn-secondary" onclick="refreshData()">🔄 새로고침</button>
+        </div>
+        
+        <!-- 매출 차트 섹션 -->
+        <div class="table-section">
+            <div class="table-header">
+                <h3>📈 매출 분석</h3>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-secondary" onclick="changeSalesPeriod(7)">7일</button>
+                    <button class="btn btn-sm btn-primary" onclick="changeSalesPeriod(30)">30일</button>
+                    <button class="btn btn-sm btn-secondary" onclick="changeSalesPeriod(90)">90일</button>
+                </div>
+            </div>
+            <div style="height: 300px; margin-top: 20px;">
+                <canvas id="salesChart"></canvas>
+            </div>
+            <div class="sales-summary" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px;">
+                <div style="text-align: center;">
+                    <div style="font-size: 12px; color: #666;">평균 일매출</div>
+                    <div style="font-size: 18px; font-weight: bold; color: #1a73e8;" id="avgDailySales">-</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 12px; color: #666;">최고 일매출</div>
+                    <div style="font-size: 18px; font-weight: bold; color: #0d9488;" id="maxDailySales">-</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 12px; color: #666;">전년 동기 대비</div>
+                    <div style="font-size: 18px; font-weight: bold;" id="yoyGrowth">-</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 베스트셀러 섹션 -->
+        <div class="table-section">
+            <div class="table-header">
+                <h3>🏆 베스트셀러 TOP 10</h3>
+                <span style="font-size: 12px; color: #666;">최근 30일 기준</span>
+            </div>
+            <div id="bestSellersContainer" style="margin-top: 15px;">
+                <div class="loading" style="text-align: center; padding: 20px;">
+                    <div class="loading-spinner"></div>
+                    <p>베스트셀러 분석 중...</p>
+                </div>
+            </div>
         </div>
         
         <!-- 상품 테이블 -->
@@ -687,10 +747,16 @@
         let currentLimit = 1000;
         let currentStats = {};
         
+        // 전역 변수 - 차트 인스턴스
+        let salesChartInstance = null;
+        
         // 페이지 로드 시 초기화
         window.addEventListener('load', () => {
             loadProducts();
             loadTodayOrders();
+            loadMonthlyComparison();
+            loadSalesChart(30);
+            loadBestSellers();
             checkAPIStatus();
             setInterval(() => {
                 loadTodayOrders();
@@ -1127,6 +1193,169 @@
         document.getElementById('searchInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') searchProducts();
         });
+        
+        // 월별 매출 비교 로드
+        async function loadMonthlyComparison() {
+            try {
+                const response = await fetch('/api/sales/monthly-comparison');
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 이번달 매출 표시
+                    const currentMonth = data.current_month;
+                    document.getElementById('monthSales').textContent = '₩' + currentMonth.total_sales.toLocaleString();
+                    
+                    // 전월 대비 증감률 표시
+                    const momGrowth = data.growth.mom;
+                    const growthText = momGrowth > 0 ? `전월 대비 +${momGrowth}%` : `전월 대비 ${momGrowth}%`;
+                    const growthElement = document.getElementById('monthGrowth');
+                    growthElement.textContent = growthText;
+                    growthElement.style.color = momGrowth > 0 ? '#2e7d32' : '#d32f2f';
+                    
+                    // 전년 동기 대비 표시
+                    const yoyGrowth = data.growth.yoy;
+                    const yoyElement = document.getElementById('yoyGrowth');
+                    if (yoyElement) {
+                        yoyElement.textContent = yoyGrowth > 0 ? `+${yoyGrowth}%` : `${yoyGrowth}%`;
+                        yoyElement.style.color = yoyGrowth > 0 ? '#2e7d32' : '#d32f2f';
+                    }
+                }
+            } catch (error) {
+                console.error('월별 매출 비교 로드 오류:', error);
+                document.getElementById('monthSales').textContent = '₩0';
+                document.getElementById('monthGrowth').textContent = '데이터 로드 중...';
+            }
+        }
+        
+        // 매출 차트 로드
+        async function loadSalesChart(days) {
+            try {
+                const response = await fetch(`/api/sales/daily-trend?days=${days}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 차트 업데이트
+                    const ctx = document.getElementById('salesChart').getContext('2d');
+                    
+                    // 기존 차트 제거
+                    if (salesChartInstance) {
+                        salesChartInstance.destroy();
+                    }
+                    
+                    // 새 차트 생성
+                    salesChartInstance = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: data.labels.map(date => {
+                                const d = new Date(date);
+                                return `${d.getMonth() + 1}/${d.getDate()}`;
+                            }),
+                            datasets: [{
+                                label: '일별 매출',
+                                data: data.sales,
+                                borderColor: '#1a73e8',
+                                backgroundColor: 'rgba(26, 115, 232, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return '매출: ₩' + context.parsed.y.toLocaleString();
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return '₩' + value.toLocaleString();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    
+                    // 통계 계산 및 표시
+                    const avgSales = data.sales.reduce((a, b) => a + b, 0) / data.sales.length;
+                    const maxSales = Math.max(...data.sales);
+                    
+                    document.getElementById('avgDailySales').textContent = '₩' + Math.round(avgSales).toLocaleString();
+                    document.getElementById('maxDailySales').textContent = '₩' + maxSales.toLocaleString();
+                }
+            } catch (error) {
+                console.error('매출 차트 로드 오류:', error);
+            }
+        }
+        
+        // 매출 차트 기간 변경
+        function changeSalesPeriod(days) {
+            // 버튼 스타일 업데이트
+            const buttons = document.querySelectorAll('.btn-group button');
+            buttons.forEach(btn => {
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-secondary');
+            });
+            event.target.classList.remove('btn-secondary');
+            event.target.classList.add('btn-primary');
+            
+            // 차트 다시 로드
+            loadSalesChart(days);
+        }
+        
+        // 베스트셀러 로드
+        async function loadBestSellers() {
+            try {
+                const response = await fetch('/api/sales/best-sellers?days=30');
+                const data = await response.json();
+                
+                if (data.success && data.products.length > 0) {
+                    const container = document.getElementById('bestSellersContainer');
+                    let html = '<div style="display: grid; gap: 10px;">';
+                    
+                    data.products.forEach((product, index) => {
+                        const marginRate = product.supply_price > 0 ? 
+                            ((product.revenue / product.quantity - product.supply_price) / product.supply_price * 100).toFixed(1) : 0;
+                        
+                        html += `
+                            <div style="display: flex; align-items: center; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; background: ${index === 0 ? '#fff3e0' : '#f8f9fa'};">
+                                <div style="width: 30px; height: 30px; background: ${index < 3 ? '#1a73e8' : '#666'}; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;">
+                                    ${index + 1}
+                                </div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; margin-bottom: 4px;">${product.product_name}</div>
+                                    <div style="font-size: 12px; color: #666;">
+                                        판매량: ${product.quantity}개 | 매출: ₩${product.revenue.toLocaleString()} | 주문: ${product.orders}건
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                    container.innerHTML = html;
+                } else {
+                    document.getElementById('bestSellersContainer').innerHTML = 
+                        '<div style="text-align: center; padding: 40px; color: #666;">베스트셀러 데이터가 없습니다.</div>';
+                }
+            } catch (error) {
+                console.error('베스트셀러 로드 오류:', error);
+                document.getElementById('bestSellersContainer').innerHTML = 
+                    '<div style="text-align: center; padding: 40px; color: #d32f2f;">데이터 로드 실패</div>';
+            }
+        }
     </script>
 </body>
 </html>

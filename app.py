@@ -35,6 +35,7 @@ from enhanced_products_api import products_bp, ProductAPI, register_routes
 from margin_management import margin_bp, MarginManager, register_margin_routes
 from vendor_management_debug import vendor_bp, VendorManager, register_vendor_routes
 from oauth_routes import oauth_bp, register_oauth_routes
+from sales_analytics import sales_bp, SalesAnalytics, register_sales_routes
 
 # 토큰 매니저 초기화 및 자동 갱신 시작
 token_manager = get_token_manager()
@@ -601,6 +602,11 @@ app.register_blueprint(vendor_bp, url_prefix='/api/vendor')
 
 # OAuth 라우트 등록
 register_oauth_routes(app)
+
+# Sales Analytics API 초기화
+sales_analytics = SalesAnalytics(get_headers, get_mall_id)
+register_sales_routes(sales_bp, sales_analytics)
+app.register_blueprint(sales_bp, url_prefix='/api/sales')
 
 # 디버그 라우트 추가
 @app.route('/api/debug/token')
