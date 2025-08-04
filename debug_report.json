@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-08-04T22:34:23.795376",
+  "timestamp": "2025-08-04T23:03:12.022817",
   "oauth_status": null,
   "auto_refresh": false,
   "api_endpoints": {
@@ -16,7 +16,7 @@
       "count": 0
     },
     "/api/categories": {
-      "status": 401,
+      "status": 200,
       "success": false,
       "error": "API 오류",
       "count": 0

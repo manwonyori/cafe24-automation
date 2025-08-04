@@ -464,16 +464,32 @@ def get_mall_id():
 
 def get_headers():
     """API 헤더 가져오기 (자동 토큰 갱신 포함)"""
-    # 환경변수에서 토큰 먼저 시도
-    access_token = os.environ.get('CAFE24_ACCESS_TOKEN')
+    access_token = None
     
-    # 토큰 매니저에서 시도
+    # 1. 환경변수에서 토큰 먼저 시도
+    access_token = os.environ.get('CAFE24_ACCESS_TOKEN')
+    if access_token:
+        logger.info(f"Using token from environment variable: ***{access_token[-10:]}")
+    
+    # 2. 토큰 매니저에서 시도
     if not access_token:
         try:
             access_token = token_manager.get_valid_token()
+            if access_token:
+                logger.info(f"Using token from token manager: ***{access_token[-10:]}")
         except Exception as e:
-            logger.error(f"Failed to get token: {str(e)}")
-            raise
+            logger.error(f"Failed to get token from manager: {str(e)}")
+    
+    # 3. 파일에서 직접 시도
+    if not access_token:
+        try:
+            with open('oauth_token.json', 'r', encoding='utf-8') as f:
+                token_data = json.load(f)
+                access_token = token_data.get('access_token')
+                if access_token:
+                    logger.info(f"Using token from file: ***{access_token[-10:]}")
+        except Exception as e:
+            logger.error(f"Failed to get token from file: {str(e)}")
     
     if not access_token:
         raise Exception("유효한 토큰을 가져올 수 없습니다")
@@ -481,7 +497,7 @@ def get_headers():
     return {
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json',
-        'X-Cafe24-Api-Version': '2025-06-01'
+        'X-Cafe24-Api-Version': '2025-01-01'
     }
 
 # Enhanced Product API 초기화 (함수 정의 후에)
@@ -508,15 +524,43 @@ register_oauth_routes(app)
 def debug_token():
     """토큰 상태 디버그"""
     try:
-        token = token_manager.get_valid_token()
-        remaining = token_manager.get_remaining_time()
+        # 환경 변수 확인
+        env_token = os.environ.get('CAFE24_ACCESS_TOKEN')
+        env_has_token = env_token is not None
+        
+        # 토큰 매니저 확인
+        manager_token = None
+        try:
+            manager_token = token_manager.get_valid_token()
+        except:
+            pass
+            
+        # 파일 확인
+        file_token = None
+        try:
+            with open('oauth_token.json', 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                file_token = data.get('access_token')
+        except:
+            pass
+        
+        # 남은 시간 확인
+        remaining = 0
+        try:
+            remaining = token_manager.get_remaining_time()
+        except:
+            pass
         
         return jsonify({
-            'has_token': token is not None,
+            'env_has_token': env_has_token,
+            'env_token_preview': f"***{env_token[-10:]}" if env_token else None,
+            'manager_has_token': manager_token is not None,
+            'file_has_token': file_token is not None,
             'remaining_seconds': remaining,
             'remaining_minutes': remaining / 60 if remaining else 0,
             'auto_refresh_active': token_manager.running,
-            'next_refresh': '30분마다 자동 갱신'
+            'next_refresh': '30분마다 자동 갱신',
+            'mall_id': get_mall_id()
         })
     except Exception as e:
         return jsonify({
