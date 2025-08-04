@@ -127,7 +127,8 @@ class SalesAnalytics:
     
     def get_monthly_sales_comparison(self):
         """월별 매출 비교 - 한국 시간 기준"""
-        now_kst = datetime.now(KST)
+        utc_now = datetime.now(pytz.UTC)
+        now_kst = utc_now.astimezone(KST)
         
         # 이번달 (KST)
         current_month_start = datetime(now_kst.year, now_kst.month, 1, tzinfo=KST)
@@ -188,7 +189,8 @@ class SalesAnalytics:
     
     def get_daily_sales_trend(self, days=30):
         """일별 매출 추이 - 한국 시간 기준"""
-        end_date = datetime.now(KST)
+        utc_now = datetime.now(pytz.UTC)
+        end_date = utc_now.astimezone(KST)
         start_date = end_date - timedelta(days=days)
         
         orders = self.get_date_range_orders(start_date, end_date)
@@ -216,7 +218,8 @@ class SalesAnalytics:
     
     def get_best_sellers(self, days=30):
         """베스트셀러 상품 - 한국 시간 기준"""
-        end_date = datetime.now(KST)
+        utc_now = datetime.now(pytz.UTC)
+        end_date = utc_now.astimezone(KST)
         start_date = end_date - timedelta(days=days)
         
         orders = self.get_date_range_orders(start_date, end_date)
@@ -267,7 +270,8 @@ class SalesAnalytics:
     
     def get_hourly_distribution(self, days=7):
         """시간대별 주문 분포 - 한국 시간 기준"""
-        end_date = datetime.now(KST)
+        utc_now = datetime.now(pytz.UTC)
+        end_date = utc_now.astimezone(KST)
         start_date = end_date - timedelta(days=days)
         
         orders = self.get_date_range_orders(start_date, end_date)

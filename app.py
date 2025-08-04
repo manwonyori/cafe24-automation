@@ -275,10 +275,11 @@ def get_today_orders():
         return jsonify({'success': False, 'error': str(e)}), 401
     
     # 한국 시간 기준 오늘 날짜
-    now_kst = datetime.now(KST)
+    utc_now = datetime.now(pytz.UTC)
+    now_kst = utc_now.astimezone(KST)
     today = now_kst.strftime('%Y-%m-%d')
     
-    logger.info(f"Fetching orders for today (KST): {today}")
+    logger.info(f"Fetching orders for today (KST): {today} ({now_kst.strftime('%Y-%m-%d %H:%M:%S %Z')})")
     
     url = f"https://{mall_id}.cafe24api.com/api/v2/admin/orders"
     params = {
