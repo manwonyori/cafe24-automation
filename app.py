@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 # 자동 토큰 관리자 import
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from auto_token_manager import get_token_manager
+from persistent_token_manager import persistent_token_manager
 from enhanced_products_api import products_bp, ProductAPI, register_routes
 from margin_management import margin_bp, MarginManager, register_margin_routes
 from vendor_management_debug import vendor_bp, VendorManager, register_vendor_routes
@@ -544,33 +545,35 @@ def get_mall_id():
         return DEFAULT_MALL_ID  # config.py에서 관리
 
 def get_headers():
-    """API 헤더 가져오기 (자동 토큰 갱신 포함)"""
+    """API 헤더 가져오기 (영구 저장소 우선)"""
     access_token = None
     
-    # 1. 환경변수에서 토큰 먼저 시도
-    access_token = os.environ.get('CAFE24_ACCESS_TOKEN')
-    if access_token:
-        logger.info(f"Using token from environment variable: ***{access_token[-10:]}")
+    # 1. 영구 토큰 관리자에서 먼저 시도
+    try:
+        access_token = persistent_token_manager.get_token()
+        if access_token:
+            logger.info(f"Using token from persistent storage: ***{access_token[-10:]}")
+    except Exception as e:
+        logger.error(f"Failed to get token from persistent storage: {str(e)}")
     
-    # 2. 토큰 매니저에서 시도
+    # 2. 토큰 매니저에서 시도 (자동 갱신)
     if not access_token:
         try:
             access_token = token_manager.get_valid_token()
             if access_token:
                 logger.info(f"Using token from token manager: ***{access_token[-10:]}")
+                # 영구 저장소에 저장
+                token_data = token_manager.token_data
+                if token_data:
+                    persistent_token_manager.save_token(token_data)
         except Exception as e:
             logger.error(f"Failed to get token from manager: {str(e)}")
     
-    # 3. 파일에서 직접 시도
+    # 3. 환경변수 (폴백)
     if not access_token:
-        try:
-            with open('oauth_token.json', 'r', encoding='utf-8') as f:
-                token_data = json.load(f)
-                access_token = token_data.get('access_token')
-                if access_token:
-                    logger.info(f"Using token from file: ***{access_token[-10:]}")
-        except Exception as e:
-            logger.error(f"Failed to get token from file: {str(e)}")
+        access_token = os.environ.get('CAFE24_ACCESS_TOKEN')
+        if access_token:
+            logger.info(f"Using token from environment variable: ***{access_token[-10:]}")
     
     if not access_token:
         raise Exception("유효한 토큰을 가져올 수 없습니다")

@@ -208,6 +208,14 @@ def auth_callback():
             with open('oauth_token.json', 'w', encoding='utf-8') as f:
                 json.dump(token_data, f, ensure_ascii=False, indent=2)
             
+            # 영구 저장소에 저장
+            try:
+                from persistent_token_manager import persistent_token_manager
+                persistent_token_manager.save_token(token_data)
+                print("[OK] 토큰이 영구 저장소에 저장됨")
+            except Exception as e:
+                print(f"[WARN] 영구 저장소 저장 실패: {str(e)}")
+            
             # 환경 변수로도 설정 (서버 재시작 없이 즉시 반영)
             os.environ['CAFE24_ACCESS_TOKEN'] = token_info['access_token']
             os.environ['CAFE24_REFRESH_TOKEN'] = token_info['refresh_token']

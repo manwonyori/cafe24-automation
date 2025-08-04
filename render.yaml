@@ -4,6 +4,10 @@ services:
     runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: python run_web.py
+    disk:
+      name: cafe24-data
+      mountPath: /opt/render/project/.data
+      sizeGB: 1
     envVars:
       - key: CAFE24_MALL_ID
         sync: false
@@ -22,6 +26,8 @@ services:
         value: INFO
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: RENDER
+        value: true
     healthCheckPath: /health
     autoDeploy: true
     

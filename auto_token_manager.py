@@ -106,6 +106,14 @@ class Cafe24AutoTokenManager:
                 os.environ['CAFE24_ACCESS_TOKEN'] = new_token['access_token']
                 os.environ['CAFE24_REFRESH_TOKEN'] = new_token['refresh_token']
                 
+                # 영구 저장소에도 저장
+                try:
+                    from persistent_token_manager import persistent_token_manager
+                    persistent_token_manager.update_token_on_refresh(self.token_data)
+                    print("[OK] 토큰이 영구 저장소에 저장됨")
+                except Exception as e:
+                    print(f"[WARN] 영구 저장소 저장 실패: {str(e)}")
+                
                 print("[OK] 토큰 자동 갱신 성공!")
                 return True
                 
