@@ -8,6 +8,9 @@ from datetime import datetime, timedelta
 import requests
 import calendar
 from collections import defaultdict
+import logging
+
+logger = logging.getLogger(__name__)
 
 sales_bp = Blueprint('sales', __name__)
 
@@ -27,7 +30,7 @@ class SalesAnalytics:
                 'start_date': start_date.strftime('%Y-%m-%d'),
                 'end_date': end_date.strftime('%Y-%m-%d'),
                 'limit': 500,
-                'fields': 'order_id,order_date,payment_amount,buyer_name,order_status,items'
+                'embed': 'items'  # items 정보를 포함하도록 embed 파라미터 추가
             }
             
             all_orders = []
@@ -37,15 +40,24 @@ class SalesAnalytics:
                 params['offset'] = offset
                 response = requests.get(url, headers=headers, params=params)
                 
+                logger.info(f"Orders API request: {url} with params: {params}")
+                logger.info(f"Orders API response status: {response.status_code}")
+                
                 if response.status_code == 200:
                     data = response.json()
                     orders = data.get('orders', [])
+                    
+                    # 주문 데이터 샘플 로깅
+                    if orders and offset == 0:
+                        logger.info(f"Sample order data: {orders[0] if orders else 'No orders'}")
+                    
                     all_orders.extend(orders)
                     
                     if len(orders) < params['limit']:
                         break
                     offset += params['limit']
                 else:
+                    logger.error(f"Orders API error: {response.status_code} - {response.text}")
                     break
                     
             return all_orders
@@ -61,9 +73,28 @@ class SalesAnalytics:
         customer_set = set()
         
         for order in orders:
-            payment_amount = float(order.get('payment_amount', 0))
+            # 다양한 금액 필드 확인 (API 버전에 따라 다를 수 있음)
+            payment_amount = 0
+            
+            # payment_amount 필드 확인
+            if 'payment_amount' in order:
+                payment_amount = float(order.get('payment_amount', 0))
+            # actual_payment_amount 필드 확인
+            elif 'actual_payment_amount' in order:
+                payment_amount = float(order.get('actual_payment_amount', 0))
+            # total_price 필드 확인
+            elif 'total_price' in order:
+                payment_amount = float(order.get('total_price', 0))
+            
+            # 첫 번째 주문의 모든 필드 로깅 (디버깅용)
+            if order_count == 1 and total_sales == 0:
+                logger.info(f"Order fields: {order.keys()}")
+                logger.info(f"Payment amount found: {payment_amount}")
+            
             total_sales += payment_amount
             customer_set.add(order.get('buyer_name', ''))
+        
+        logger.info(f"Total sales calculated: {total_sales} from {order_count} orders")
         
         return {
             'total_sales': total_sales,
@@ -168,6 +199,8 @@ class SalesAnalytics:
         
         orders = self.get_date_range_orders(start_date, end_date)
         
+        logger.info(f"Best sellers: Found {len(orders)} orders for {days} days")
+        
         # 상품별 집계
         product_sales = defaultdict(lambda: {
             'quantity': 0, 
@@ -176,8 +209,13 @@ class SalesAnalytics:
             'orders': 0
         })
         
+        items_found = False
         for order in orders:
             items = order.get('items', [])
+            if items and not items_found:
+                logger.info(f"Sample item: {items[0] if items else 'No items'}")
+                items_found = True
+                
             for item in items:
                 product_no = item.get('product_no')
                 if product_no:

@@ -754,6 +754,7 @@
         window.addEventListener('load', () => {
             loadProducts();
             loadTodayOrders();
+            loadStockStats();
             loadMonthlyComparison();
             loadSalesChart(30);
             loadBestSellers();
@@ -1313,6 +1314,22 @@
             
             // 차트 다시 로드
             loadSalesChart(days);
+        }
+        
+        // 재고 통계 로드
+        async function loadStockStats() {
+            try {
+                const response = await fetch('/api/low-stock');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('totalProducts').textContent = data.total_products || '0';
+                    document.getElementById('lowStock').textContent = data.low_stock_count || '0';
+                    document.getElementById('outOfStock').textContent = data.out_of_stock_count || '0';
+                }
+            } catch (error) {
+                console.error('재고 통계 로드 오류:', error);
+            }
         }
         
         // 베스트셀러 로드

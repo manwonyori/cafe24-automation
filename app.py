@@ -276,42 +276,67 @@ def get_today_orders():
     params = {
         'start_date': today,
         'end_date': today,
-        'limit': 100,
-        'fields': 'order_id,order_date,payment_amount,order_status,buyer_name'
+        'limit': 500,
+        'fields': 'order_id,order_date,payment_amount,actual_payment_amount,total_price,order_status,buyer_name'
     }
     
-    response = requests.get(url, headers=headers, params=params)
+    all_orders = []
+    offset = 0
+    total_amount = 0
     
-    if response.status_code == 200:
-        data = response.json()
-        orders = data.get('orders', [])
+    # 페이징 처리
+    while True:
+        params['offset'] = offset
+        response = requests.get(url, headers=headers, params=params)
         
-        # 총액 계산
-        total_amount = sum(float(order.get('payment_amount', '0')) for order in orders)
+        logger.info(f"Today orders API: {response.status_code}")
         
-        return jsonify({
-            'success': True,
-            'orders': orders,
-            'count': len(orders),
-            'total_amount': total_amount,
-            'date': today
-        })
-    elif response.status_code == 422:
-        # 주문이 없는 경우
-        return jsonify({
-            'success': True,
-            'orders': [],
-            'count': 0,
-            'total_amount': 0,
-            'date': today
-        })
-    else:
-        logger.error(f"Orders API error: {response.status_code} - {response.text}")
-        return jsonify({
-            'success': False,
-            'error': f'API 오류: {response.status_code}',
-            'message': response.text
-        }), response.status_code
+        if response.status_code == 200:
+            data = response.json()
+            orders = data.get('orders', [])
+            
+            # 첫 번째 주문 샘플 로깅
+            if orders and offset == 0:
+                logger.info(f"Sample order: {orders[0]}")
+            
+            # 총액 계산 - 다양한 필드 확인
+            for order in orders:
+                amount = 0
+                if 'payment_amount' in order:
+                    amount = float(order.get('payment_amount', 0))
+                elif 'actual_payment_amount' in order:
+                    amount = float(order.get('actual_payment_amount', 0))
+                elif 'total_price' in order:
+                    amount = float(order.get('total_price', 0))
+                total_amount += amount
+            
+            all_orders.extend(orders)
+            
+            if len(orders) < params['limit']:
+                break
+            offset += params['limit']
+        else:
+            logger.error(f"Orders API error: {response.status_code} - {response.text}")
+            if response.status_code == 422:
+                # 주문이 없는 경우
+                break
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': f'API 오류: {response.status_code}',
+                    'message': response.text
+                }), response.status_code
+    
+    # 루프 종료 후 결과 반환
+    logger.info(f"Today total: {total_amount} from {len(all_orders)} orders")
+    
+    return jsonify({
+        'success': True,
+        'orders': all_orders,
+        'count': len(all_orders),
+        'total_amount': total_amount,
+        'date': today
+    })
 
 @app.route('/api/low-stock', methods=['GET'])
 @handle_errors
@@ -322,40 +347,52 @@ def get_low_stock():
     
     url = f"https://{mall_id}.cafe24api.com/api/v2/admin/products"
     params = {
-        'limit': 100,
+        'limit': 500,
         'fields': 'product_no,product_name,price,quantity,display,product_code'
     }
     
-    response = requests.get(url, headers=headers, params=params)
+    # 모든 상품 가져오기 (페이징)
+    all_products = []
+    offset = 0
     
-    if response.status_code == 200:
-        data = response.json()
-        products = data.get('products', [])
+    while True:
+        params['offset'] = offset
+        response = requests.get(url, headers=headers, params=params)
         
-        # 재고 부족 상품 필터링
-        threshold = request.args.get('threshold', 10, type=int)
-        low_stock_products = [
-            p for p in products 
-            if int(p.get('quantity', 0)) < threshold and int(p.get('quantity', 0)) > 0
-        ]
-        out_of_stock_products = [
-            p for p in products 
-            if int(p.get('quantity', 0)) == 0
-        ]
-        
-        return jsonify({
-            'success': True,
-            'low_stock': low_stock_products,
-            'out_of_stock': out_of_stock_products,
-            'low_stock_count': len(low_stock_products),
-            'out_of_stock_count': len(out_of_stock_products),
-            'threshold': threshold
-        })
-    else:
-        return jsonify({
-            'success': False,
-            'error': f'API 오류: {response.status_code}'
-        }), response.status_code
+        if response.status_code == 200:
+            data = response.json()
+            products = data.get('products', [])
+            all_products.extend(products)
+            
+            if len(products) < params['limit']:
+                break
+            offset += params['limit']
+        else:
+            logger.error(f"Low stock API error: {response.status_code}")
+            break
+    
+    # 재고 부족 상품 필터링
+    threshold = request.args.get('threshold', 10, type=int)
+    low_stock_products = [
+        p for p in all_products 
+        if int(p.get('quantity', 0)) < threshold and int(p.get('quantity', 0)) > 0
+    ]
+    out_of_stock_products = [
+        p for p in all_products 
+        if int(p.get('quantity', 0)) == 0
+    ]
+    
+    logger.info(f"Stock stats: Total={len(all_products)}, Low={len(low_stock_products)}, Out={len(out_of_stock_products)}")
+    
+    return jsonify({
+        'success': True,
+        'low_stock': low_stock_products,
+        'out_of_stock': out_of_stock_products,
+        'low_stock_count': len(low_stock_products),
+        'out_of_stock_count': len(out_of_stock_products),
+        'total_products': len(all_products),
+        'threshold': threshold
+    })
 
 @app.route('/api/template/download', methods=['GET'])
 @handle_errors
