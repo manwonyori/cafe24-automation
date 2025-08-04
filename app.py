@@ -8,13 +8,17 @@ import sys
 from flask import Flask, render_template, jsonify, request, send_file
 import json
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
+import pytz
 import io
 from pathlib import Path
 import logging
 from functools import wraps
 import time
 from config import CAFE24_API_VERSION, DEFAULT_MALL_ID, API_CACHE_DURATION
+
+# 한국 시간대 설정
+KST = pytz.timezone('Asia/Seoul')
 
 # 로깅 설정
 logging.basicConfig(
@@ -262,7 +266,7 @@ def get_products():
 @app.route('/api/orders/today', methods=['GET'])
 @handle_errors
 def get_today_orders():
-    """오늘 주문 조회"""
+    """오늘 주문 조회 - 한국 시간 기준"""
     try:
         headers = get_headers()
         mall_id = get_mall_id()
@@ -270,14 +274,20 @@ def get_today_orders():
         logger.error(f"Failed to get headers: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 401
     
-    today = datetime.now().strftime('%Y-%m-%d')
+    # 한국 시간 기준 오늘 날짜
+    now_kst = datetime.now(KST)
+    today = now_kst.strftime('%Y-%m-%d')
+    
+    logger.info(f"Fetching orders for today (KST): {today}")
     
     url = f"https://{mall_id}.cafe24api.com/api/v2/admin/orders"
     params = {
         'start_date': today,
         'end_date': today,
         'limit': 500,
-        'fields': 'order_id,order_date,payment_amount,actual_payment_amount,total_price,order_status,buyer_name'
+        'embed': 'items,receivers,return',  # 상세 정보 포함
+        'order_status': 'N00,N10,N20,N21,N22,N30,N40',  # 정상 주문 상태만 (취소/환불 제외)
+        'date_type': 'order_date'  # 주문일 기준
     }
     
     all_orders = []
@@ -295,19 +305,41 @@ def get_today_orders():
             data = response.json()
             orders = data.get('orders', [])
             
-            # 첫 번째 주문 샘플 로깅
+            # 첫 번째 주문 상세 로깅
             if orders and offset == 0:
-                logger.info(f"Sample order: {orders[0]}")
+                logger.info(f"Sample order keys: {list(orders[0].keys())}")
+                logger.info(f"Sample order data: {json.dumps(orders[0], ensure_ascii=False)[:500]}...")
             
-            # 총액 계산 - 다양한 필드 확인
+            # 총액 계산 - 정확한 필드 사용
             for order in orders:
+                # 주문 상태 확인 (취소/환불 제외)
+                order_status = order.get('order_status', '')
+                if order_status.startswith('C'):  # C로 시작하는 것은 취소 주문
+                    continue
+                
+                # 다양한 금액 필드 확인
                 amount = 0
-                if 'payment_amount' in order:
-                    amount = float(order.get('payment_amount', 0))
-                elif 'actual_payment_amount' in order:
-                    amount = float(order.get('actual_payment_amount', 0))
-                elif 'total_price' in order:
-                    amount = float(order.get('total_price', 0))
+                
+                # 실제 결제 금액 우선 순위
+                if 'actual_payment_amount' in order:
+                    try:
+                        amount = float(order.get('actual_payment_amount', '0').replace(',', ''))
+                    except:
+                        amount = 0
+                elif 'payment_amount' in order:
+                    try:
+                        amount = float(order.get('payment_amount', '0').replace(',', ''))
+                    except:
+                        amount = 0
+                elif 'order_price_amount' in order:
+                    try:
+                        amount = float(order.get('order_price_amount', '0').replace(',', ''))
+                    except:
+                        amount = 0
+                
+                if amount > 0:
+                    logger.debug(f"Order {order.get('order_id')}: {amount} ({order_status})")
+                
                 total_amount += amount
             
             all_orders.extend(orders)

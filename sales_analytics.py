@@ -5,12 +5,17 @@
 """
 from flask import Blueprint, jsonify, request
 from datetime import datetime, timedelta
+import pytz
 import requests
 import calendar
 from collections import defaultdict
 import logging
+import json
 
 logger = logging.getLogger(__name__)
+
+# 한국 시간대
+KST = pytz.timezone('Asia/Seoul')
 
 sales_bp = Blueprint('sales', __name__)
 
@@ -30,7 +35,9 @@ class SalesAnalytics:
                 'start_date': start_date.strftime('%Y-%m-%d'),
                 'end_date': end_date.strftime('%Y-%m-%d'),
                 'limit': 500,
-                'embed': 'items'  # items 정보를 포함하도록 embed 파라미터 추가
+                'embed': 'items,receivers,return',  # 상세 정보 포함
+                'order_status': 'N00,N10,N20,N21,N22,N30,N40',  # 정상 주문만
+                'date_type': 'order_date'
             }
             
             all_orders = []
@@ -69,64 +76,79 @@ class SalesAnalytics:
     def calculate_sales_summary(self, orders):
         """주문 데이터에서 매출 요약 계산"""
         total_sales = 0
-        order_count = len(orders)
+        valid_order_count = 0
         customer_set = set()
         
-        for order in orders:
-            # 다양한 금액 필드 확인 (API 버전에 따라 다를 수 있음)
+        for idx, order in enumerate(orders):
+            # 주문 상태 확인 (취소/환불 제외)
+            order_status = order.get('order_status', '')
+            if order_status.startswith('C'):  # 취소 주문 제외
+                continue
+                
+            # 첫 주문 상세 로깅
+            if idx == 0:
+                logger.info(f"First order full data: {json.dumps(order, ensure_ascii=False)[:1000]}...")
+            
+            # 다양한 금액 필드 확인
             payment_amount = 0
             
-            # payment_amount 필드 확인
-            if 'payment_amount' in order:
-                payment_amount = float(order.get('payment_amount', 0))
-            # actual_payment_amount 필드 확인
-            elif 'actual_payment_amount' in order:
-                payment_amount = float(order.get('actual_payment_amount', 0))
-            # total_price 필드 확인
-            elif 'total_price' in order:
-                payment_amount = float(order.get('total_price', 0))
+            # actual_payment_amount를 우선 확인 (실제 결제 금액)
+            if 'actual_payment_amount' in order:
+                try:
+                    payment_amount = float(str(order.get('actual_payment_amount', '0')).replace(',', ''))
+                except:
+                    payment_amount = 0
+            # payment_amount 확인
+            elif 'payment_amount' in order:
+                try:
+                    payment_amount = float(str(order.get('payment_amount', '0')).replace(',', ''))
+                except:
+                    payment_amount = 0
+            # order_price_amount 확인
+            elif 'order_price_amount' in order:
+                try:
+                    payment_amount = float(str(order.get('order_price_amount', '0')).replace(',', ''))
+                except:
+                    payment_amount = 0
             
-            # 첫 번째 주문의 모든 필드 로깅 (디버깅용)
-            if order_count == 1 and total_sales == 0:
-                logger.info(f"Order fields: {order.keys()}")
-                logger.info(f"Payment amount found: {payment_amount}")
-            
-            total_sales += payment_amount
-            customer_set.add(order.get('buyer_name', ''))
+            if payment_amount > 0:
+                total_sales += payment_amount
+                valid_order_count += 1
+                customer_set.add(order.get('buyer_name', ''))
         
-        logger.info(f"Total sales calculated: {total_sales} from {order_count} orders")
+        logger.info(f"Total sales: {total_sales:,.0f} from {valid_order_count} valid orders (total: {len(orders)})")
         
         return {
             'total_sales': total_sales,
-            'order_count': order_count,
+            'order_count': valid_order_count,
             'unique_customers': len(customer_set),
-            'average_order_value': total_sales / order_count if order_count > 0 else 0
+            'average_order_value': total_sales / valid_order_count if valid_order_count > 0 else 0
         }
     
     def get_monthly_sales_comparison(self):
-        """월별 매출 비교"""
-        now = datetime.now()
+        """월별 매출 비교 - 한국 시간 기준"""
+        now_kst = datetime.now(KST)
         
-        # 이번달
-        current_month_start = datetime(now.year, now.month, 1)
-        current_month_orders = self.get_date_range_orders(current_month_start, now)
+        # 이번달 (KST)
+        current_month_start = datetime(now_kst.year, now_kst.month, 1, tzinfo=KST)
+        current_month_orders = self.get_date_range_orders(current_month_start, now_kst)
         current_month_summary = self.calculate_sales_summary(current_month_orders)
         
         # 전달
-        if now.month == 1:
-            last_month_start = datetime(now.year - 1, 12, 1)
-            last_month_end = datetime(now.year - 1, 12, 31)
+        if now_kst.month == 1:
+            last_month_start = datetime(now_kst.year - 1, 12, 1, tzinfo=KST)
+            last_month_end = datetime(now_kst.year - 1, 12, 31, tzinfo=KST)
         else:
-            last_month_start = datetime(now.year, now.month - 1, 1)
-            last_month_days = calendar.monthrange(now.year, now.month - 1)[1]
-            last_month_end = datetime(now.year, now.month - 1, last_month_days)
+            last_month_start = datetime(now_kst.year, now_kst.month - 1, 1, tzinfo=KST)
+            last_month_days = calendar.monthrange(now_kst.year, now_kst.month - 1)[1]
+            last_month_end = datetime(now_kst.year, now_kst.month - 1, last_month_days, tzinfo=KST)
             
         last_month_orders = self.get_date_range_orders(last_month_start, last_month_end)
         last_month_summary = self.calculate_sales_summary(last_month_orders)
         
         # 전년 동월
-        last_year_month_start = datetime(now.year - 1, now.month, 1)
-        last_year_month_end = datetime(now.year - 1, now.month, min(now.day, calendar.monthrange(now.year - 1, now.month)[1]))
+        last_year_month_start = datetime(now_kst.year - 1, now_kst.month, 1, tzinfo=KST)
+        last_year_month_end = datetime(now_kst.year - 1, now_kst.month, min(now_kst.day, calendar.monthrange(now_kst.year - 1, now_kst.month)[1]), tzinfo=KST)
         last_year_month_orders = self.get_date_range_orders(last_year_month_start, last_year_month_end)
         last_year_month_summary = self.calculate_sales_summary(last_year_month_orders)
         
@@ -144,8 +166,8 @@ class SalesAnalytics:
         
         return {
             'current_month': {
-                'period': f"{now.year}년 {now.month}월",
-                'days': now.day,
+                'period': f"{now_kst.year}년 {now_kst.month}월",
+                'days': now_kst.day,
                 **current_month_summary
             },
             'last_month': {
@@ -155,7 +177,7 @@ class SalesAnalytics:
             },
             'last_year_month': {
                 'period': f"{last_year_month_start.year}년 {last_year_month_start.month}월",
-                'days': min(now.day, calendar.monthrange(now.year - 1, now.month)[1]),
+                'days': min(now_kst.day, calendar.monthrange(now_kst.year - 1, now_kst.month)[1]),
                 **last_year_month_summary
             },
             'growth': {
@@ -165,8 +187,8 @@ class SalesAnalytics:
         }
     
     def get_daily_sales_trend(self, days=30):
-        """일별 매출 추이"""
-        end_date = datetime.now()
+        """일별 매출 추이 - 한국 시간 기준"""
+        end_date = datetime.now(KST)
         start_date = end_date - timedelta(days=days)
         
         orders = self.get_date_range_orders(start_date, end_date)
@@ -193,8 +215,8 @@ class SalesAnalytics:
         }
     
     def get_best_sellers(self, days=30):
-        """베스트셀러 상품"""
-        end_date = datetime.now()
+        """베스트셀러 상품 - 한국 시간 기준"""
+        end_date = datetime.now(KST)
         start_date = end_date - timedelta(days=days)
         
         orders = self.get_date_range_orders(start_date, end_date)
@@ -244,8 +266,8 @@ class SalesAnalytics:
         } for product_no, data in sorted_products]
     
     def get_hourly_distribution(self, days=7):
-        """시간대별 주문 분포"""
-        end_date = datetime.now()
+        """시간대별 주문 분포 - 한국 시간 기준"""
+        end_date = datetime.now(KST)
         start_date = end_date - timedelta(days=days)
         
         orders = self.get_date_range_orders(start_date, end_date)
