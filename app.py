@@ -32,6 +32,7 @@ from auto_token_manager import get_token_manager
 from enhanced_products_api import products_bp, ProductAPI, register_routes
 from margin_management import margin_bp, MarginManager, register_margin_routes
 from vendor_management_debug import vendor_bp, VendorManager, register_vendor_routes
+from oauth_routes import oauth_bp, register_oauth_routes
 
 # 토큰 매니저 초기화 및 자동 갱신 시작
 token_manager = get_token_manager()
@@ -497,6 +498,9 @@ app.register_blueprint(margin_bp, url_prefix='/api/margin')
 vendor_manager = VendorManager(get_headers, get_mall_id)
 register_vendor_routes(vendor_bp, vendor_manager)
 app.register_blueprint(vendor_bp, url_prefix='/api/vendor')
+
+# OAuth 라우트 등록
+register_oauth_routes(app)
 
 # 디버그 라우트 추가
 @app.route('/api/debug/token')
