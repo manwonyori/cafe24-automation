@@ -6,7 +6,7 @@ Cafe24 API 설정 - 중요한 상수들을 한 곳에서 관리
 import os
 
 # API 버전 - 매우 중요! 변경하지 마세요
-CAFE24_API_VERSION = '2024-06-01'  # 유효한 버전만 사용
+CAFE24_API_VERSION = '2025-06-01'  # 이 앱의 기본 버전
 
 # OAuth 설정
 OAUTH_CONFIG = {
