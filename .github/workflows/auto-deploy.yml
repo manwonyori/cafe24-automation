@@ -1,0 +1,135 @@
+name: Cafe24 Auto Deploy to Render
+
+on:
+  push:
+    branches: [ master, main ]
+  workflow_dispatch:
+    inputs:
+      deploy_mode:
+        description: 'Deployment mode'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - demo
+
+env:
+  # Render service details
+  RENDER_SERVICE_NAME: cafe24-automation
+  RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+
+jobs:
+  sync-secrets:
+    runs-on: ubuntu-latest
+    name: Sync API Keys to Render
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests python-dotenv cryptography
+        
+    - name: Decrypt and sync environment variables
+      env:
+        # Encrypted Cafe24 credentials
+        CAFE24_MALL_ID: ${{ secrets.CAFE24_MALL_ID }}
+        CAFE24_CLIENT_ID: ${{ secrets.CAFE24_CLIENT_ID }}
+        CAFE24_CLIENT_SECRET: ${{ secrets.CAFE24_CLIENT_SECRET }}
+        CAFE24_ACCESS_TOKEN: ${{ secrets.CAFE24_ACCESS_TOKEN }}
+        CAFE24_REFRESH_TOKEN: ${{ secrets.CAFE24_REFRESH_TOKEN }}
+        # Render API
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      run: |
+        python .github/scripts/sync_env_vars.py
+        
+    - name: Trigger Render deployment
+      if: success()
+      run: |
+        curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" \
+          -H "Accept: application/json" \
+          -H "Content-Type: application/json" \
+          -d '{"clearCache": "clear"}'
+          
+    - name: Wait for deployment
+      run: |
+        echo "Waiting for deployment to complete..."
+        sleep 60
+        
+    - name: Verify deployment
+      run: |
+        python .github/scripts/verify_deployment.py
+        
+  test-deployment:
+    needs: sync-secrets
+    runs-on: ubuntu-latest
+    name: Test Production Deployment
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install test dependencies
+      run: |
+        pip install requests pytest
+        
+    - name: Run API tests
+      run: |
+        python test_all_endpoints.py https://cafe24-automation.onrender.com
+        
+    - name: Check production mode
+      run: |
+        response=$(curl -s https://cafe24-automation.onrender.com/)
+        mode=$(echo $response | python -c "import sys, json; print(json.load(sys.stdin).get('mode', 'unknown'))")
+        
+        if [ "$mode" = "production" ]; then
+          echo "✅ Production mode active!"
+        else
+          echo "❌ Still in $mode mode"
+          exit 1
+        fi
+        
+    - name: Generate test report
+      if: always()
+      run: |
+        python .github/scripts/generate_report.py
+        
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: test_results_*.json
+        
+  notify:
+    needs: [sync-secrets, test-deployment]
+    runs-on: ubuntu-latest
+    if: always()
+    name: Deployment Notification
+    
+    steps:
+    - name: Send success notification
+      if: success()
+      run: |
+        echo "🎉 Cafe24 system successfully deployed to production!"
+        echo "URL: https://cafe24-automation.onrender.com"
+        echo "Mode: Production"
+        echo "Time: $(date)"
+        
+    - name: Send failure notification
+      if: failure()
+      run: |
+        echo "❌ Deployment failed. Check the logs for details."
