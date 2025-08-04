@@ -26,11 +26,6 @@ app = Flask(__name__,
     static_folder='static'
 )
 
-# Enhanced Product API 초기화
-product_api = ProductAPI(get_headers, get_mall_id)
-register_routes(products_bp, product_api)
-app.register_blueprint(products_bp, url_prefix='/api/products')
-
 @app.route('/')
 def index():
     """메인 페이지"""
@@ -64,7 +59,10 @@ def advanced_dashboard():
 def process_command():
     """자연어 명령 처리"""
     try:
-        from nlp_processor import NLPProcessor
+        try:
+            from nlp_processor import NLPProcessor
+        except ImportError:
+            return jsonify({'success': False, 'error': 'NLP 모듈을 찾을 수 없습니다'}), 500
         
         data = request.get_json()
         command = data.get('command', '')
@@ -87,8 +85,8 @@ def process_command():
             return get_low_stock()
         elif result['action'] == 'sales_report':
             from report_generator import ReportGenerator
-            import requests as req
-            generator = ReportGenerator(req)
+            # Flask test client를 생성하여 내부 API 호출
+            generator = ReportGenerator(app.test_client())
             report = generator.generate_daily_report()
             return jsonify({'success': True, 'report': report})
         else:
@@ -106,9 +104,8 @@ def generate_report(report_type):
     """리포트 생성"""
     try:
         from report_generator import ReportGenerator
-        import requests as req
         
-        generator = ReportGenerator(req)
+        generator = ReportGenerator(app.test_client())
         
         if report_type == 'daily':
             report = generator.generate_daily_report()
@@ -342,6 +339,11 @@ def get_headers():
         'Content-Type': 'application/json',
         'X-Cafe24-Api-Version': '2025-06-01'
     }
+
+# Enhanced Product API 초기화 (함수 정의 후에)
+product_api = ProductAPI(get_headers, get_mall_id)
+register_routes(products_bp, product_api)
+app.register_blueprint(products_bp, url_prefix='/api/products')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
