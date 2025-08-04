@@ -101,6 +101,11 @@ class Cafe24AutoTokenManager:
                 self.token_data['issued_at'] = now.isoformat() + '.000'
                 
                 self.save_token()
+                
+                # 환경 변수에도 즉시 반영
+                os.environ['CAFE24_ACCESS_TOKEN'] = new_token['access_token']
+                os.environ['CAFE24_REFRESH_TOKEN'] = new_token['refresh_token']
+                
                 print("[OK] 토큰 자동 갱신 성공!")
                 return True
                 
@@ -144,6 +149,17 @@ class Cafe24AutoTokenManager:
         self.refresh_thread = threading.Thread(target=run_schedule, daemon=True)
         self.refresh_thread.start()
         print("[OK] 자동 토큰 갱신 스케줄러 시작")
+    
+    def get_remaining_time(self):
+        """토큰 남은 시간 확인 (초 단위)"""
+        if not self.token_data:
+            return 0
+            
+        expires_at = datetime.fromisoformat(self.token_data['expires_at'].replace('.000', ''))
+        now = datetime.now()
+        
+        remaining = (expires_at - now).total_seconds()
+        return max(0, remaining)
     
     def stop_auto_refresh(self):
         """백그라운드 자동 갱신 중지"""

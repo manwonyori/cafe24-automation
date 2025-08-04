@@ -214,6 +214,11 @@ def auth_callback():
             with open('oauth_token.json', 'w', encoding='utf-8') as f:
                 json.dump(token_data, f, ensure_ascii=False, indent=2)
             
+            # 환경 변수로도 설정 (서버 재시작 없이 즉시 반영)
+            os.environ['CAFE24_ACCESS_TOKEN'] = token_info['access_token']
+            os.environ['CAFE24_REFRESH_TOKEN'] = token_info['refresh_token']
+            os.environ['CAFE24_MALL_ID'] = mall_id
+            
             # 성공 페이지
             success_html = """
             <!DOCTYPE html>
