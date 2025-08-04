@@ -21,6 +21,7 @@ from nlp_processor import NaturalLanguageProcessor
 from cache_manager import CacheManager
 from utils.health_checker import HealthChecker
 from utils.report_generator import ReportGenerator
+from demo_mode import DemoAPIClient
 
 
 class Cafe24System:
@@ -35,7 +36,20 @@ class Cafe24System:
         self._check_environment()
         
         # Initialize components
-        self.api_client = Cafe24APIClient(self.config)
+        # Use demo mode if credentials are not properly configured
+        if not self.config.get('mall_id') or self.config.get('mall_id') == 'your_mall_id':
+            self.logger.warning("Using demo mode - no valid API credentials")
+            self.api_client = DemoAPIClient(self.config)
+            self.demo_mode = True
+        else:
+            try:
+                self.api_client = Cafe24APIClient(self.config)
+                self.demo_mode = False
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize API client: {e}, using demo mode")
+                self.api_client = DemoAPIClient(self.config)
+                self.demo_mode = True
+                
         self.nlp_processor = NaturalLanguageProcessor()
         self.cache_manager = CacheManager(self.config.get('cache', {}))
         self.health_checker = HealthChecker()

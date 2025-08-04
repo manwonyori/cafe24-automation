@@ -50,7 +50,7 @@ class Cafe24APIClient:
         """Initialize API client with configuration"""
         self.config = config
         self.mall_id = config['mall_id']
-        self.base_url = f"https://{self.mall_id}.cafe24api.com/api/v2/admin"
+        self.base_url = f"https://{self.mall_id}.cafe24api.com/api/v2"
         self.api_version = config.get('api_version', '2025-06-01')
         
         # Setup logging
@@ -62,21 +62,14 @@ class Cafe24APIClient:
         
     def _load_token(self) -> Dict[str, Any]:
         """Load OAuth token"""
-        # In production, this would load from secure storage
-        # For now, using environment variables
+        # Use environment variables for Render deployment
         import os
         
-        token_file = os.getenv('CAFE24_TOKEN_FILE', 'config/oauth_token.json')
-        
-        if os.path.exists(token_file):
-            with open(token_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        else:
-            # Create initial token structure
-            return {
-                'access_token': os.getenv('CAFE24_ACCESS_TOKEN', ''),
-                'refresh_token': os.getenv('CAFE24_REFRESH_TOKEN', ''),
-                'expires_at': (datetime.now() + timedelta(hours=2)).isoformat(),
+        # Create token structure from environment
+        return {
+            'access_token': os.getenv('CAFE24_ACCESS_TOKEN', ''),
+            'refresh_token': os.getenv('CAFE24_REFRESH_TOKEN', ''),
+            'expires_at': (datetime.now() + timedelta(hours=2)).isoformat(),
                 'client_id': self.config['client_id'],
                 'mall_id': self.mall_id
             }
