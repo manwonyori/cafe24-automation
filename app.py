@@ -17,7 +17,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from auto_token_manager import get_token_manager
 from enhanced_products_api import products_bp, ProductAPI, register_routes
 from margin_management import margin_bp, MarginManager, register_margin_routes
-from vendor_management import vendor_bp, VendorManager, register_vendor_routes
+from vendor_management_debug import vendor_bp, VendorManager, register_vendor_routes
 
 # 토큰 매니저 초기화 및 자동 갱신 시작
 token_manager = get_token_manager()
