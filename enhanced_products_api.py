@@ -35,9 +35,9 @@ class ProductAPI:
             params = {}
             
             # 1. 페이지네이션 파라미터
-            limit = request.args.get('limit', 100, type=int)
+            limit = request.args.get('limit', 1000, type=int)
             # 전체보기인 경우 최대값 설정
-            if limit >= 9999:
+            if limit >= 10000:
                 limit = 10000  # Cafe24 API 최대 한도
             params['limit'] = limit
             params['offset'] = request.args.get('offset', 0, type=int)

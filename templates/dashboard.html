@@ -464,13 +464,13 @@
                 <div class="filter-group">
                     <label>페이지당 표시</label>
                     <select id="pageSize" onchange="applyFilters()">
-                        <option value="20">20개</option>
-                        <option value="50">50개</option>
-                        <option value="100" selected>100개</option>
+                        <option value="100">100개</option>
                         <option value="200">200개</option>
                         <option value="500">500개</option>
-                        <option value="1000">1000개</option>
-                        <option value="9999">전체보기</option>
+                        <option value="1000" selected>1000개</option>
+                        <option value="2000">2000개</option>
+                        <option value="5000">5000개</option>
+                        <option value="10000">전체보기</option>
                     </select>
                 </div>
             </div>
@@ -589,7 +589,7 @@
         // 전역 변수
         let currentProducts = [];
         let currentOffset = 0;
-        let currentLimit = 100;
+        let currentLimit = 1000;
         let currentStats = {};
         
         // 페이지 로드 시 초기화
@@ -727,7 +727,7 @@
             // 현재 표시 상태 업데이트
             const pageSize = document.getElementById('pageSize').value;
             const displayed = currentProducts.length;
-            if (pageSize === '9999') {
+            if (pageSize === '10000') {
                 document.getElementById('totalProductsDesc').textContent = '전체 상품 표시중';
             } else if (displayed < stats.total_products) {
                 document.getElementById('totalProductsDesc').textContent = `${displayed}개 표시중`;
@@ -759,7 +759,7 @@
             const pageInfo = document.createElement('span');
             pageInfo.style.margin = '0 20px';
             const pageSize = document.getElementById('pageSize').value;
-            if (pageSize === '9999') {
+            if (pageSize === '10000') {
                 pageInfo.textContent = '전체 상품 표시중';
             } else {
                 pageInfo.textContent = `페이지 ${currentPage}`;
@@ -988,7 +988,7 @@
         
         // 전체 상품 보기
         function viewAllProducts() {
-            document.getElementById('pageSize').value = '9999';
+            document.getElementById('pageSize').value = '10000';
             currentOffset = 0;
             loadProducts();
         }
