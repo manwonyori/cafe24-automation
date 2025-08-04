@@ -39,6 +39,11 @@ def index():
         }
     })
 
+@app.route('/health')
+def health():
+    """헬스체크 엔드포인트"""
+    return jsonify({'status': 'healthy'}), 200
+
 @app.route('/api/status')
 def api_status():
     """API 상태 확인"""
