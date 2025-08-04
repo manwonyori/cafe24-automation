@@ -10,6 +10,7 @@ import json
 import requests
 from datetime import datetime
 import io
+from pathlib import Path
 
 # 자동 토큰 관리자 import
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -259,6 +260,41 @@ def get_low_stock():
             
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/template/download', methods=['GET'])
+def download_template():
+    """엑셀 템플릿 다운로드"""
+    try:
+        filename = request.args.get('filename')
+        if not filename:
+            return jsonify({'error': '파일명이 필요합니다'}), 400
+        
+        # 보안을 위해 파일명 검증
+        allowed_files = [
+            'product_upload_template.xlsx',
+            'product_update_template.xlsx',
+            'inventory_update_template.xlsx',
+            'price_update_template.xlsx'
+        ]
+        
+        if filename not in allowed_files:
+            return jsonify({'error': '허용되지 않은 파일입니다'}), 403
+        
+        # 파일 경로
+        file_path = Path('static/excel_templates') / filename
+        
+        if not file_path.exists():
+            return jsonify({'error': '파일을 찾을 수 없습니다'}), 404
+        
+        return send_file(
+            file_path,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/categories', methods=['GET'])
 def get_categories():
