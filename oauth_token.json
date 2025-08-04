@@ -1,8 +1,8 @@
 {
-  "access_token": "kOdhziVfLKwJLcWs6v6AHD",
-  "refresh_token": "qe1XbLcERqqXfabhjIWVtN",
-  "expires_at": "2025-08-04T22:15:05.063215.000",
-  "refresh_token_expires_at": "2025-08-18T20:15:05.063226.000",
+  "access_token": "7AznSqA5MVLsfUSFIn9anE",
+  "refresh_token": "cpAxAMFmCJiiEDwUYKgIsA",
+  "expires_at": "2025-08-05T01:18:12.081697.000",
+  "refresh_token_expires_at": "2025-08-18T23:18:12.081697.000",
   "client_id": "9bPpABwHB5mtkCEAfIeuNK",
   "client_secret": "qtnWtUk2OZzua1SRa7gN3A",
   "mall_id": "manwonyori",
@@ -14,6 +14,6 @@
     "mall.write_order",
     "mall.read_customer"
   ],
-  "issued_at": "2025-08-04T20:15:05.063229.000",
+  "issued_at": "2025-08-04T23:18:12.081697.000",
   "shop_no": "1"
 }
