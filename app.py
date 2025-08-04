@@ -14,6 +14,7 @@ import io
 # 자동 토큰 관리자 import
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from auto_token_manager import get_token_manager
+from enhanced_products_api import products_bp, ProductAPI, register_routes
 
 # 토큰 매니저 초기화 및 자동 갱신 시작
 token_manager = get_token_manager()
@@ -24,6 +25,11 @@ app = Flask(__name__,
     template_folder='templates',
     static_folder='static'
 )
+
+# Enhanced Product API 초기화
+product_api = ProductAPI(get_headers, get_mall_id)
+register_routes(products_bp, product_api)
+app.register_blueprint(products_bp, url_prefix='/api/products')
 
 @app.route('/')
 def index():
@@ -48,6 +54,11 @@ def health():
 def dashboard():
     """대시보드 페이지"""
     return render_template('dashboard.html')
+
+@app.route('/advanced-dashboard')
+def advanced_dashboard():
+    """고급 대시보드 페이지"""
+    return render_template('advanced_dashboard.html')
 
 @app.route('/api/command', methods=['POST'])
 def process_command():
@@ -144,43 +155,9 @@ def api_status():
 
 @app.route('/api/products', methods=['GET'])
 def get_products():
-    """상품 목록 조회"""
-    try:
-        # 자동 갱신된 토큰과 헤더 사용
-        try:
-            headers = get_headers()
-            mall_id = get_mall_id()
-        except Exception as e:
-            return jsonify({'success': False, 'error': str(e)}), 401
-        
-        limit = request.args.get('limit', 100)
-        offset = request.args.get('offset', 0)
-        
-        url = f"https://{mall_id}.cafe24api.com/api/v2/admin/products"
-        params = {
-            'limit': limit,
-            'offset': offset,
-            'fields': 'product_no,product_name,price,quantity,display,product_code,created_date'
-        }
-        
-        response = requests.get(url, headers=headers, params=params)
-        
-        if response.status_code == 200:
-            data = response.json()
-            return jsonify({
-                'success': True,
-                'products': data.get('products', []),
-                'count': len(data.get('products', []))
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': f'API 오류: {response.status_code}',
-                'message': response.text
-            }), response.status_code
-            
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+    """기본 상품 목록 조회 (기존 API와의 호환성 유지)"""
+    # 고급 API로 리다이렉트
+    return product_api.get_products_advanced()
 
 @app.route('/api/orders/today', methods=['GET'])
 def get_today_orders():
@@ -233,6 +210,53 @@ def get_today_orders():
                 'success': False,
                 'error': f'API 오류: {response.status_code}',
                 'message': response.text
+            }), response.status_code
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/low-stock', methods=['GET'])
+def get_low_stock():
+    """재고 부족 상품 조회"""
+    try:
+        headers = get_headers()
+        mall_id = get_mall_id()
+        
+        url = f"https://{mall_id}.cafe24api.com/api/v2/admin/products"
+        params = {
+            'limit': 100,
+            'fields': 'product_no,product_name,price,quantity,display,product_code'
+        }
+        
+        response = requests.get(url, headers=headers, params=params)
+        
+        if response.status_code == 200:
+            data = response.json()
+            products = data.get('products', [])
+            
+            # 재고 부족 상품 필터링
+            threshold = request.args.get('threshold', 10, type=int)
+            low_stock_products = [
+                p for p in products 
+                if int(p.get('quantity', 0)) < threshold and int(p.get('quantity', 0)) > 0
+            ]
+            out_of_stock_products = [
+                p for p in products 
+                if int(p.get('quantity', 0)) == 0
+            ]
+            
+            return jsonify({
+                'success': True,
+                'low_stock': low_stock_products,
+                'out_of_stock': out_of_stock_products,
+                'low_stock_count': len(low_stock_products),
+                'out_of_stock_count': len(out_of_stock_products),
+                'threshold': threshold
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'API 오류: {response.status_code}'
             }), response.status_code
             
     except Exception as e:
