@@ -33,18 +33,32 @@ except Exception as e:
 @app.route('/')
 def home():
     """Home endpoint"""
+    mode = 'demo' if hasattr(system, 'demo_mode') and system.demo_mode else 'production'
+    
     return jsonify({
         'name': 'Cafe24 Automation System',
         'version': '2.0.0',
         'description': '카페24 쇼핑몰 완전 자동화 시스템',
         'status': 'online' if system_initialized else 'error',
+        'mode': mode,
+        'features': {
+            'natural_language': '한국어/영어 자연어 명령 지원',
+            'oauth': 'OAuth 2.0 인증',
+            'caching': '고성능 캐싱 시스템',
+            'auto_refresh': '토큰 자동 갱신'
+        },
         'endpoints': {
             'health': '/health',
             'execute': '/api/execute',
             'products': '/api/products',
-            'orders': '/api/orders',
+            'orders': '/api/orders', 
             'inventory': '/api/inventory',
             'report': '/api/report'
+        },
+        'examples': {
+            'execute': 'POST /api/execute {"command": "오늘 주문 확인"}',
+            'products': 'GET /api/products?limit=10',
+            'inventory': 'GET /api/inventory?threshold=5'
         }
     })
 

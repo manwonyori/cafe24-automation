@@ -37,14 +37,21 @@ class Cafe24System:
         
         # Initialize components
         # Use demo mode if credentials are not properly configured
-        if not self.config.get('mall_id') or self.config.get('mall_id') == 'your_mall_id':
-            self.logger.warning("Using demo mode - no valid API credentials")
+        if not self.config.get('mall_id') or not self.config.get('client_id') or not self.config.get('client_secret'):
+            self.logger.warning("Using demo mode - missing API credentials")
             self.api_client = DemoAPIClient(self.config)
             self.demo_mode = True
         else:
             try:
                 self.api_client = Cafe24APIClient(self.config)
-                self.demo_mode = False
+                # Test connection
+                if self.api_client.oauth_manager.is_authenticated():
+                    self.demo_mode = False
+                    self.logger.info("API client initialized with OAuth authentication")
+                else:
+                    self.logger.warning("OAuth authentication not available, using demo mode")
+                    self.api_client = DemoAPIClient(self.config)
+                    self.demo_mode = True
             except Exception as e:
                 self.logger.warning(f"Failed to initialize API client: {e}, using demo mode")
                 self.api_client = DemoAPIClient(self.config)

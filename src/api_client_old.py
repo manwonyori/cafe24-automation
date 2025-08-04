@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Cafe24 API Client V2
-Handles all API communications with OAuth 2.0 support
+Cafe24 API Client
+Handles all API communications with proper error handling and retry logic
 """
 
 import time
@@ -50,7 +50,7 @@ def retry_on_error(max_retries: int = 3, delay: int = 2):
 
 
 class Cafe24APIClient:
-    """API client for Cafe24 e-commerce platform with OAuth 2.0"""
+    """API client for Cafe24 e-commerce platform"""
     
     def __init__(self, config: Dict[str, Any]):
         """Initialize API client with configuration"""
@@ -87,6 +87,38 @@ class Cafe24APIClient:
             self.logger.warning("No valid OAuth token available")
             
         return headers
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                new_token = response.json()
+                
+                # Update token data
+                self.token_data['access_token'] = new_token['access_token']
+                self.token_data['refresh_token'] = new_token['refresh_token']
+                self.token_data['expires_at'] = (
+                    datetime.now() + timedelta(seconds=new_token.get('expires_in', 7200))
+                ).isoformat()
+                
+                # Save updated token
+                self._save_token(self.token_data)
+                self.logger.info("Token refreshed successfully")
+                
+            else:
+                self.logger.error(f"Token refresh failed: {response.status_code}")
+                raise Exception("Token refresh failed")
+                
+        except Exception as e:
+            self.logger.error(f"Token refresh error: {e}")
+            raise
+            
+    def _get_headers(self) -> Dict[str, str]:
+        """Get API request headers"""
+        return {
+            'Authorization': f"Bearer {self.token_data['access_token']}",
+            'Content-Type': 'application/json',
+            'X-Cafe24-Api-Version': self.api_version
+        }
         
     @retry_on_error()
     def _request(self, method: str, endpoint: str, 
@@ -97,7 +129,7 @@ class Cafe24APIClient:
         
         self.logger.info(f"API {method} {endpoint}")
         
-        response = self.session.request(
+        response = requests.request(
             method=method,
             url=url,
             headers=self._get_headers(),
@@ -109,10 +141,9 @@ class Cafe24APIClient:
         # Check for token expiration
         if response.status_code == 401:
             self.logger.warning("401 Unauthorized, attempting token refresh...")
-            try:
-                self.oauth_manager.refresh_access_token()
+            if self.oauth_manager.refresh_access_token():
                 # Retry with new token
-                response = self.session.request(
+                response = requests.request(
                     method=method,
                     url=url,
                     headers=self._get_headers(),
@@ -120,13 +151,10 @@ class Cafe24APIClient:
                     params=params,
                     timeout=30
                 )
-            except Exception as e:
-                self.logger.error(f"Token refresh failed: {e}")
-                
+            
         response.raise_for_status()
         return response
         
-    # Product APIs
     def get_products(self, limit: int = 100, offset: int = 0, **kwargs) -> List[Dict]:
         """Get products list"""
         params = {
@@ -145,25 +173,23 @@ class Cafe24APIClient:
         
     def update_product(self, product_no: int, data: Dict) -> Dict:
         """Update product information"""
-        response = self._request('PUT', f'/products/{product_no}', data={'product': data})
+        payload = {
+            'shop_no': 1,
+            'request': data
+        }
+        
+        response = self._request('PUT', f'/products/{product_no}', data=payload)
         return response.json()
         
-    # Order APIs
-    def get_orders(self, limit: int = 100, offset: int = 0, 
-                   start_date: Optional[str] = None, 
-                   end_date: Optional[str] = None, **kwargs) -> List[Dict]:
-        """Get orders list"""
+    def get_orders(self, start_date: str, end_date: str, **kwargs) -> List[Dict]:
+        """Get orders within date range"""
         params = {
-            'limit': limit,
-            'offset': offset,
+            'start_date': start_date,
+            'end_date': end_date,
+            'embed': 'items,buyer,receivers',
             **kwargs
         }
         
-        if start_date:
-            params['start_date'] = start_date
-        if end_date:
-            params['end_date'] = end_date
-            
         response = self._request('GET', '/orders', params=params)
         return response.json().get('orders', [])
         
@@ -174,23 +200,21 @@ class Cafe24APIClient:
         
     def update_order_status(self, order_id: str, status: str) -> Dict:
         """Update order status"""
-        data = {'order': {'order_status': status}}
+        data = {
+            'shop_no': 1,
+            'request': {
+                'status': status
+            }
+        }
+        
         response = self._request('PUT', f'/orders/{order_id}', data=data)
         return response.json()
         
-    # Customer APIs
-    def get_customers(self, limit: int = 100, offset: int = 0, **kwargs) -> List[Dict]:
+    def get_customers(self, **kwargs) -> List[Dict]:
         """Get customers list"""
-        params = {
-            'limit': limit,
-            'offset': offset,
-            **kwargs
-        }
-        
-        response = self._request('GET', '/customers', params=params)
+        response = self._request('GET', '/customers', params=kwargs)
         return response.json().get('customers', [])
         
-    # Inventory APIs
     def get_inventory(self, product_no: int) -> Dict:
         """Get product inventory"""
         response = self._request('GET', f'/products/{product_no}/inventory')
@@ -198,33 +222,12 @@ class Cafe24APIClient:
         
     def update_inventory(self, product_no: int, quantity: int) -> Dict:
         """Update product inventory"""
-        data = {'inventory': {'quantity': quantity}}
-        response = self._request('PUT', f'/products/{product_no}/inventory', data=data)
-        return response.json()
-        
-    # Statistics APIs
-    def get_sales_statistics(self, period: str = 'daily', 
-                           start_date: Optional[str] = None,
-                           end_date: Optional[str] = None) -> Dict:
-        """Get sales statistics"""
-        params = {
-            'period': period
+        data = {
+            'shop_no': 1,
+            'request': {
+                'quantity': quantity
+            }
         }
         
-        if start_date:
-            params['start_date'] = start_date
-        if end_date:
-            params['end_date'] = end_date
-            
-        response = self._request('GET', '/statistics/sales', params=params)
+        response = self._request('PUT', f'/products/{product_no}/inventory', data=data)
         return response.json()
-        
-    # Utility methods
-    def test_connection(self) -> bool:
-        """Test API connection"""
-        try:
-            self.get_products(limit=1)
-            return True
-        except Exception as e:
-            self.logger.error(f"Connection test failed: {e}")
-            return False
