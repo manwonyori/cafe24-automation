@@ -363,7 +363,11 @@ def download_template():
     if not filename:
         return jsonify({'error': '파일명이 필요합니다'}), 400
     
-    # 보안을 위해 파일명 검증
+    # 보안을 위해 파일명 검증 (동적 생성 파일도 포함)
+    import glob
+    static_dir = Path('static/excel_templates')
+    existing_files = [f.name for f in static_dir.glob('*.xlsx')] if static_dir.exists() else []
+    
     allowed_files = [
         'product_upload_template.xlsx',
         'product_update_template.xlsx',
@@ -373,7 +377,7 @@ def download_template():
         'cafe24_product_update.xlsx',
         'cafe24_inventory_update.xlsx',
         'cafe24_price_update.xlsx'
-    ]
+    ] + existing_files
     
     if filename not in allowed_files:
         return jsonify({'error': '허용되지 않은 파일입니다'}), 403
@@ -390,6 +394,82 @@ def download_template():
         as_attachment=True,
         download_name=filename
     )
+
+@app.route('/api/generate-price-excel', methods=['GET'])
+@handle_errors
+def generate_price_excel():
+    """실시간 가격 수정용 엑셀 파일 생성"""
+    try:
+        import pandas as pd
+        from datetime import datetime
+        
+        # 현재 상품 정보 가져오기
+        headers = get_headers()
+        mall_id = get_mall_id()
+        url = f"https://{mall_id}.cafe24api.com/api/v2/admin/products"
+        params = {
+            'limit': 100,
+            'fields': 'product_no,product_name,price,supply_price,retail_price,product_code'
+        }
+        
+        response = requests.get(url, headers=headers, params=params)
+        
+        if response.status_code != 200:
+            return jsonify({
+                'success': False,
+                'error': f'상품 정보 조회 실패: {response.status_code}'
+            }), 500
+        
+        products = response.json().get('products', [])
+        
+        # 엑셀 데이터 준비
+        excel_data = []
+        for product in products:
+            product_no = product.get('product_no')
+            product_name = product.get('product_name', '')
+            current_price = float(product.get('price', 0))
+            supply_price = float(product.get('supply_price', 0))
+            
+            # 현재 마진율 계산
+            current_margin = 0
+            if supply_price > 0:
+                current_margin = ((current_price - supply_price) / supply_price) * 100
+            
+            excel_data.append({
+                'product_no': product_no,
+                'product_name': product_name,
+                'current_price': int(current_price),
+                'supply_price': int(supply_price),
+                'current_margin_rate': round(current_margin, 2),
+                'new_price': int(current_price),  # 사용자가 수정할 칸
+                'memo': ''
+            })
+        
+        # 데이터프레임 생성
+        df = pd.DataFrame(excel_data)
+        
+        # 파일 경로
+        filename = f'price_update_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        filepath = Path('static/excel_templates') / filename
+        
+        # 엑셀 파일 생성
+        with pd.ExcelWriter(filepath, engine='openpyxl') as writer:
+            df.to_excel(writer, sheet_name='가격수정', index=False)
+        
+        return jsonify({
+            'success': True,
+            'filename': filename,
+            'download_url': f'/api/template/download?filename={filename}',
+            'message': f'{len(excel_data)}개 상품의 가격 수정용 엑셀 파일이 생성되었습니다.',
+            'count': len(excel_data)
+        })
+        
+    except Exception as e:
+        logger.error(f"Excel generation error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @app.route('/api/categories', methods=['GET'])
 @handle_errors

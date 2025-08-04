@@ -466,6 +466,9 @@
                     <button class="btn btn-primary" onclick="showBulkPriceUpdate()">
                         💰 가격 일괄 수정
                     </button>
+                    <button class="btn btn-warning" onclick="downloadPriceUpdateExcel()">
+                        📋 가격수정 엑셀 생성
+                    </button>
                     <button class="btn btn-success" onclick="exportToExcel()">
                         📥 엑셀 다운로드
                     </button>
@@ -970,6 +973,40 @@
         // 엑셀 다운로드
         function exportToExcel() {
             window.location.href = '/api/products/export?format=excel&include_margin=true';
+        }
+        
+        // 가격 수정용 엑셀 파일 생성 및 다운로드
+        async function downloadPriceUpdateExcel() {
+            try {
+                const loadingBtn = event.target;
+                const originalText = loadingBtn.innerHTML;
+                loadingBtn.innerHTML = '⏳ 생성 중...';
+                loadingBtn.disabled = true;
+                
+                const response = await fetch('/api/generate-price-excel');
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 파일 다운로드
+                    window.location.href = data.download_url;
+                    
+                    // 성공 메시지
+                    alert(`✅ ${data.message}\n\n사용법:\n1. 다운로드된 엑셀 파일을 열어주세요\n2. 'new_price' 컬럼에 새로운 가격을 입력하세요\n3. Cafe24 관리자 > 상품관리 > 상품일괄등록에서 업로드하세요`);
+                } else {
+                    alert('엑셀 파일 생성 실패: ' + data.error);
+                }
+                
+                loadingBtn.innerHTML = originalText;
+                loadingBtn.disabled = false;
+                
+            } catch (error) {
+                console.error('Excel generation error:', error);
+                alert('엑셀 파일 생성 중 오류가 발생했습니다.');
+                
+                const loadingBtn = event.target;
+                loadingBtn.innerHTML = '📋 가격수정 엑셀 생성';
+                loadingBtn.disabled = false;
+            }
         }
     </script>
 </body>
