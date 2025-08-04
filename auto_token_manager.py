@@ -129,8 +129,9 @@ class Cafe24AutoTokenManager:
         """백그라운드 자동 갱신 시작"""
         self.running = True
         
-        # 스케줄 설정: 1시간마다 체크
-        schedule.every(1).hours.do(self.check_and_refresh)
+        # 스케줄 설정: 30분마다 체크
+        schedule.every(30).minutes.do(self.check_and_refresh)
+        print(f"✓ 자동 토큰 갱신 설정: 30분마다 실행")
         
         # 즉시 한 번 체크
         self.check_and_refresh()

@@ -1,0 +1,60 @@
+{
+  "timestamp": "2025-08-04T22:34:23.795376",
+  "oauth_status": null,
+  "auto_refresh": false,
+  "api_endpoints": {
+    "/api/status": {
+      "status": 200,
+      "success": false,
+      "error": "",
+      "count": 0
+    },
+    "/api/products": {
+      "status": 401,
+      "success": false,
+      "error": "API 오류: 401",
+      "count": 0
+    },
+    "/api/categories": {
+      "status": 401,
+      "success": false,
+      "error": "API 오류",
+      "count": 0
+    },
+    "/api/margin/analysis": {
+      "status": 200,
+      "success": true,
+      "error": "",
+      "count": 0
+    },
+    "/api/vendor/suppliers": {
+      "status": 200,
+      "success": true,
+      "error": "",
+      "count": 1
+    },
+    "/api/vendor/brands": {
+      "status": 200,
+      "success": true,
+      "error": "",
+      "count": 0
+    },
+    "/api/orders/today": {
+      "status": 401,
+      "success": false,
+      "error": "API 오류: 401",
+      "count": 0
+    },
+    "/api/low-stock": {
+      "status": 401,
+      "success": false,
+      "error": "API 오류: 401",
+      "count": 0
+    }
+  },
+  "recommendations": [
+    "OAuth 토큰 갱신 필요",
+    "실패한 엔드포인트 수정 필요: /api/status, /api/products, /api/categories, /api/orders/today, /api/low-stock",
+    "공급업체 데이터 추출 로직 재확인 필요"
+  ]
+}
