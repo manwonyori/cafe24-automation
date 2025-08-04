@@ -109,7 +109,7 @@ dmypy.json
 
 # Project specific
 config/.env
-config/oauth_token.json
+# config/oauth_token.json  # 임시로 주석 처리
 logs/
 cache/
 *.log
