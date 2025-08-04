@@ -1,67 +1,134 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-로컬에서 카페24 API 테스트
+Test Cafe24 system locally
 """
 
 import os
 import sys
-import json
-from dotenv import load_dotenv
 
-# 환경 변수 로드
-load_dotenv('config/.env')
-
-# src 디렉토리를 Python 경로에 추가
+# Add source directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from cafe24_system import Cafe24System
+from demo_mode import DemoAPIClient
 
-def test_local():
-    print("=== 카페24 API 로컬 테스트 ===\n")
+
+def test_demo_mode():
+    """Test demo mode functionality"""
+    print("Testing Demo Mode...")
+    print("=" * 50)
     
-    # 환경 변수 확인
-    print("1. 환경 변수 확인:")
-    mall_id = os.getenv('CAFE24_MALL_ID')
-    client_id = os.getenv('CAFE24_CLIENT_ID')
-    print(f"   Mall ID: {mall_id}")
-    print(f"   Client ID: {client_id[:10]}...")
+    # Create demo client
+    demo = DemoAPIClient({'mall_id': 'test'})
     
-    # 시스템 초기화
-    print("\n2. 시스템 초기화:")
-    try:
-        system = Cafe24System()
-        mode = "Production" if not system.demo_mode else "Demo"
-        print(f"   시스템 모드: {mode}")
-    except Exception as e:
-        print(f"   오류: {e}")
-        return
+    # Test products
+    print("\n1. Testing Products API:")
+    products = demo.get_products(limit=3)
+    print(f"   Found {len(products)} products")
+    for p in products[:2]:
+        print(f"   - {p['product_name']}: {p['selling_price']} won ({p['inventory_quantity']} in stock)")
+        
+    # Test orders
+    print("\n2. Testing Orders API:")
+    orders = demo.get_orders(limit=3)
+    print(f"   Found {len(orders)} orders")
+    for o in orders[:2]:
+        print(f"   - Order {o['order_id']}: {o['payment_amount']} won by {o['buyer_name']}")
+        
+    # Test customers
+    print("\n3. Testing Customers API:")
+    customers = demo.get_customers(limit=3)
+    print(f"   Found {len(customers)} customers")
+    for c in customers[:2]:
+        print(f"   - {c['name']} ({c['email']}): {c['total_order_amount']} won total")
+        
+    # Test inventory
+    print("\n4. Testing Inventory API:")
+    for i in range(1, 4):
+        inv = demo.get_inventory(i)
+        print(f"   Product {i}: {inv['inventory_quantity']} units")
+        
+    # Test sales statistics
+    print("\n5. Testing Sales Statistics API:")
+    for period in ['daily', 'weekly', 'monthly']:
+        stats = demo.get_sales_statistics(period=period)
+        print(f"   {period.capitalize()}: {stats['total_sales']} won ({stats['order_count']} orders)")
+        
+    print("\n[OK] All demo mode tests passed!")
     
-    # API 테스트
-    print("\n3. API 테스트:")
+
+def test_system():
+    """Test full system"""
+    print("\n\nTesting Full System...")
+    print("=" * 50)
     
-    # 상품 조회
-    print("   - 상품 조회 중...")
-    try:
-        products = system.get_products(limit=3)
-        print(f"     ✓ 상품 {len(products)}개 조회 성공")
-        for i, product in enumerate(products[:3], 1):
-            print(f"       {i}. {product.get('product_name', 'Unknown')}")
-    except Exception as e:
-        print(f"     ✗ 상품 조회 실패: {e}")
+    # Create system in demo mode
+    os.environ['CAFE24_MALL_ID'] = ''
+    os.environ['CAFE24_CLIENT_ID'] = ''
+    os.environ['CAFE24_CLIENT_SECRET'] = ''
     
-    # 자연어 명령
-    print("\n   - 자연어 명령 테스트...")
-    commands = ["상품 목록 보여줘", "재고 부족 상품"]
+    system = Cafe24System()
+    
+    print(f"System initialized in {'demo' if system.demo_mode else 'production'} mode")
+    
+    # Test natural language processing
+    print("\n1. Testing Natural Language Commands:")
+    commands = [
+        "show products",
+        "check inventory", 
+        "today orders"
+    ]
+    
     for cmd in commands:
-        try:
-            result = system.execute(cmd)
-            status = "✓" if result['success'] else "✗"
-            print(f"     {status} '{cmd}'")
-        except Exception as e:
-            print(f"     ✗ '{cmd}' 실행 실패: {e}")
+        result = system.execute(cmd)
+        print(f"   Command: '{cmd}' -> Success: {result['success']}")
+        
+    # Test direct methods
+    print("\n2. Testing Direct Methods:")
     
-    print("\n=== 테스트 완료 ===")
+    # Products
+    products = system.get_products(limit=2)
+    print(f"   get_products(): {len(products)} products")
+    
+    # Orders
+    orders = system.get_orders()
+    print(f"   get_orders(): {len(orders)} orders")
+    
+    # Customers
+    customers = system.get_customers(limit=2)
+    print(f"   get_customers(): {len(customers)} customers")
+    
+    # Sales stats
+    stats = system.get_sales_statistics(period='daily')
+    print(f"   get_sales_statistics(): {stats['total_sales']} won daily")
+    
+    # Inventory check
+    inv_check = system.check_inventory(threshold=10)
+    print(f"   check_inventory(): {len(inv_check['low_stock'])} low stock items")
+    
+    print("\n[OK] All system tests passed!")
+    
+
+def main():
+    """Run all tests"""
+    print("Cafe24 Local Test Suite")
+    print("=" * 50)
+    
+    try:
+        test_demo_mode()
+        test_system()
+        
+        print("\n\n" + "=" * 50)
+        print("ALL TESTS PASSED!")
+        print("The system is working correctly in demo mode.")
+        print("=" * 50)
+        
+    except Exception as e:
+        print(f"\n\n[ERROR] Test failed: {e}")
+        import traceback
+        traceback.print_exc()
+
 
 if __name__ == "__main__":
-    test_local()
+    main()

@@ -1,0 +1,934 @@
+[
+  {
+    "name": "Home Page",
+    "path": "/",
+    "method": "GET",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.52s",
+    "response": {
+      "description": "카페24 쇼핑몰 완전 자동화 시스템",
+      "endpoints": {
+        "execute": "/api/execute",
+        "health": "/health",
+        "inventory": "/api/inventory",
+        "orders": "/api/orders",
+        "products": "/api/products",
+        "report": "/api/report"
+      },
+      "examples": {
+        "execute": "POST /api/execute {\"command\": \"오늘 주문 확인\"}",
+        "inventory": "GET /api/inventory?threshold=5",
+        "products": "GET /api/products?limit=10"
+      },
+      "features": {
+        "auto_refresh": "토큰 자동 갱신",
+        "caching": "고성능 캐싱 시스템",
+        "natural_language": "한국어/영어 자연어 명령 지원",
+        "oauth": "OAuth 2.0 인증"
+      },
+      "mode": "demo",
+      "name": "Cafe24 Automation System",
+      "status": "online",
+      "version": "2.0.0"
+    }
+  },
+  {
+    "name": "Health Check",
+    "path": "/health",
+    "method": "GET",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.18s",
+    "response": {
+      "service": "cafe24-automation",
+      "status": "healthy",
+      "system_initialized": true,
+      "timestamp": "2025-08-04T08:01:03.059553",
+      "version": "2.0.0"
+    }
+  },
+  {
+    "name": "Products List",
+    "path": "/api/products?limit=5",
+    "method": "GET",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.20s",
+    "response": {
+      "count": 5,
+      "products": [
+        {
+          "created_date": "2025-07-05T07:58:46.022647",
+          "display": "T",
+          "inventory_quantity": 45,
+          "product_code": "MW-001",
+          "product_name": "만원요리 김치찌개 밀키트",
+          "product_no": 1,
+          "selling": "T",
+          "selling_price": "10000.00",
+          "summary_description": "집에서 즐기는 진짜 김치찌개"
+        },
+        {
+          "created_date": "2025-07-10T07:58:46.022660",
+          "display": "T",
+          "inventory_quantity": 12,
+          "product_code": "MW-002",
+          "product_name": "만원요리 된장찌개 밀키트",
+          "product_no": 2,
+          "selling": "T",
+          "selling_price": "10000.00",
+          "summary_description": "구수한 된장찌개 한 그릇"
+        },
+        {
+          "created_date": "2025-07-15T07:58:46.022665",
+          "display": "T",
+          "inventory_quantity": 8,
+          "product_code": "MW-003",
+          "product_name": "만원요리 부대찌개 밀키트",
+          "product_no": 3,
+          "selling": "T",
+          "selling_price": "12000.00",
+          "summary_description": "푸짐한 부대찌개 세트"
+        },
+        {
+          "created_date": "2025-07-20T07:58:46.022668",
+          "display": "T",
+          "inventory_quantity": 3,
+          "product_code": "MW-004",
+          "product_name": "만원요리 순두부찌개 밀키트",
+          "product_no": 4,
+          "selling": "T",
+          "selling_price": "10000.00",
+          "summary_description": "부드러운 순두부찌개"
+        },
+        {
+          "created_date": "2025-07-25T07:58:46.022672",
+          "display": "T",
+          "inventory_quantity": 25,
+          "product_code": "MW-005",
+          "product_name": "만원요리 갈비탕 밀키트",
+          "product_no": 5,
+          "selling": "T",
+          "selling_price": "15000.00",
+          "summary_description": "진한 갈비탕의 맛"
+        }
+      ],
+      "success": true
+    }
+  },
+  {
+    "name": "Products with Filter",
+    "path": "/api/products?selling=T&limit=3",
+    "method": "GET",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.18s",
+    "response": {
+      "count": 3,
+      "products": [
+        {
+          "created_date": "2025-07-05T07:58:46.022647",
+          "display": "T",
+          "inventory_quantity": 45,
+          "product_code": "MW-001",
+          "product_name": "만원요리 김치찌개 밀키트",
+          "product_no": 1,
+          "selling": "T",
+          "selling_price": "10000.00",
+          "summary_description": "집에서 즐기는 진짜 김치찌개"
+        },
+        {
+          "created_date": "2025-07-10T07:58:46.022660",
+          "display": "T",
+          "inventory_quantity": 12,
+          "product_code": "MW-002",
+          "product_name": "만원요리 된장찌개 밀키트",
+          "product_no": 2,
+          "selling": "T",
+          "selling_price": "10000.00",
+          "summary_description": "구수한 된장찌개 한 그릇"
+        },
+        {
+          "created_date": "2025-07-15T07:58:46.022665",
+          "display": "T",
+          "inventory_quantity": 8,
+          "product_code": "MW-003",
+          "product_name": "만원요리 부대찌개 밀키트",
+          "product_no": 3,
+          "selling": "T",
+          "selling_price": "12000.00",
+          "summary_description": "푸짐한 부대찌개 세트"
+        }
+      ],
+      "success": true
+    }
+  },
+  {
+    "name": "Orders Today",
+    "path": "/api/orders?limit=5",
+    "method": "GET",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.17s",
+    "response": {
+      "count": 0,
+      "orders": [],
+      "success": true
+    }
+  },
+  {
+    "name": "Orders Date Range",
+    "path": "/api/orders?start_date=2025-08-04&limit=3",
+    "method": "GET",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.62s",
+    "response": {
+      "count": 0,
+      "orders": [],
+      "success": true
+    }
+  },
+  {
+    "name": "Inventory Check",
+    "path": "/api/inventory?threshold=10",
+    "method": "GET",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.17s",
+    "response": {
+      "low_stock": [
+        {
+          "created_date": "2025-07-15T07:58:46.022665",
+          "display": "T",
+          "inventory_quantity": 8,
+          "product_code": "MW-003",
+          "product_name": "만원요리 부대찌개 밀키트",
+          "product_no": 3,
+          "selling": "T",
+          "selling_price": "12000.00",
+          "summary_description": "푸짐한 부대찌개 세트"
+        },
+        {
+          "created_date": "2025-07-20T07:58:46.022668",
+          "display": "T",
+          "inventory_quantity": 3,
+          "product_code": "MW-004",
+          "product_name": "만원요리 순두부찌개 밀키트",
+          "product_no": 4,
+          "selling": "T",
+          "selling_price": "10000.00",
+          "summary_description": "부드러운 순두부찌개"
+        }
+      ],
+      "low_stock_count": 2,
+      "out_of_stock": [],
+      "out_of_stock_count": 0,
+      "success": true,
+      "threshold": 10,
+      "total_products": 5
+    }
+  },
+  {
+    "name": "Low Stock Items",
+    "path": "/api/inventory?threshold=5",
+    "method": "GET",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.17s",
+    "response": {
+      "low_stock": [
+        {
+          "created_date": "2025-07-20T07:58:46.022668",
+          "display": "T",
+          "inventory_quantity": 3,
+          "product_code": "MW-004",
+          "product_name": "만원요리 순두부찌개 밀키트",
+          "product_no": 4,
+          "selling": "T",
+          "selling_price": "10000.00",
+          "summary_description": "부드러운 순두부찌개"
+        }
+      ],
+      "low_stock_count": 1,
+      "out_of_stock": [],
+      "out_of_stock_count": 0,
+      "success": true,
+      "threshold": 5,
+      "total_products": 5
+    }
+  },
+  {
+    "name": "Customers List",
+    "path": "/api/customers?limit=5",
+    "method": "GET",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.16s",
+    "response": {
+      "count": 3,
+      "customers": [
+        {
+          "created_date": "2025-02-05T08:01:08.249012",
+          "email": "kim@example.com",
+          "group_name": "VIP",
+          "member_id": "customer001",
+          "name": "김철수",
+          "phone": "010-1234-5678",
+          "total_order_amount": "450000"
+        },
+        {
+          "created_date": "2025-05-06T08:01:08.249027",
+          "email": "lee@example.com",
+          "group_name": "일반",
+          "member_id": "customer002",
+          "name": "이영희",
+          "phone": "010-2345-6789",
+          "total_order_amount": "120000"
+        },
+        {
+          "created_date": "2025-07-28T08:01:08.249031",
+          "email": "park@example.com",
+          "group_name": "신규",
+          "member_id": "customer003",
+          "name": "박민수",
+          "phone": "010-3456-7890",
+          "total_order_amount": "30000"
+        }
+      ],
+      "success": true
+    }
+  },
+  {
+    "name": "Daily Sales Stats",
+    "path": "/api/sales/statistics?period=daily",
+    "method": "GET",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.18s",
+    "response": {
+      "statistics": {
+        "average_order_value": "25000",
+        "best_selling_products": [
+          {
+            "product_name": "만원요리 김치찌개 밀키트",
+            "quantity": 12
+          },
+          {
+            "product_name": "만원요리 된장찌개 밀키트",
+            "quantity": 8
+          }
+        ],
+        "date": "2025-08-04",
+        "order_count": 5,
+        "period": "daily",
+        "total_sales": "125000"
+      },
+      "success": true
+    }
+  },
+  {
+    "name": "Weekly Sales Stats",
+    "path": "/api/sales/statistics?period=weekly",
+    "method": "GET",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.19s",
+    "response": {
+      "statistics": {
+        "average_order_value": "25000",
+        "end_date": "2025-08-04",
+        "order_count": 35,
+        "period": "weekly",
+        "start_date": "2025-07-28",
+        "total_sales": "875000"
+      },
+      "success": true
+    }
+  },
+  {
+    "name": "Monthly Sales Stats",
+    "path": "/api/sales/statistics?period=monthly",
+    "method": "GET",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.18s",
+    "response": {
+      "statistics": {
+        "average_order_value": "25000",
+        "growth_rate": "+15.3%",
+        "month": "2025-08",
+        "order_count": 150,
+        "period": "monthly",
+        "total_sales": "3750000"
+      },
+      "success": true
+    }
+  },
+  {
+    "name": "Daily Report",
+    "path": "/api/report/daily",
+    "method": "GET",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.17s",
+    "response": {
+      "report": {
+        "date": "2025-08-04",
+        "generated_at": "2025-08-04T08:01:10.957267",
+        "inventory_alerts": {
+          "low_stock": [
+            {
+              "created_date": "2025-07-15T07:58:46.022665",
+              "display": "T",
+              "inventory_quantity": 8,
+              "product_code": "MW-003",
+              "product_name": "만원요리 부대찌개 밀키트",
+              "product_no": 3,
+              "selling": "T",
+              "selling_price": "12000.00",
+              "summary_description": "푸짐한 부대찌개 세트"
+            },
+            {
+              "created_date": "2025-07-20T07:58:46.022668",
+              "display": "T",
+              "inventory_quantity": 3,
+              "product_code": "MW-004",
+              "product_name": "만원요리 순두부찌개 밀키트",
+              "product_no": 4,
+              "selling": "T",
+              "selling_price": "10000.00",
+              "summary_description": "부드러운 순두부찌개"
+            }
+          ],
+          "out_of_stock": []
+        },
+        "orders": [],
+        "report_type": "daily",
+        "summary": {
+          "average_order_value": 0,
+          "low_stock_items": 2,
+          "out_of_stock_items": 0,
+          "total_orders": 0,
+          "total_sales": 0
+        }
+      },
+      "success": true
+    }
+  },
+  {
+    "name": "Inventory Report",
+    "path": "/api/report/inventory",
+    "method": "GET",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.18s",
+    "response": {
+      "report": {
+        "details": {
+          "critical_items": [],
+          "warning_items": [
+            {
+              "created_date": "2025-07-15T07:58:46.022665",
+              "display": "T",
+              "inventory_quantity": 8,
+              "product_code": "MW-003",
+              "product_name": "만원요리 부대찌개 밀키트",
+              "product_no": 3,
+              "selling": "T",
+              "selling_price": "12000.00",
+              "summary_description": "푸짐한 부대찌개 세트"
+            },
+            {
+              "created_date": "2025-07-20T07:58:46.022668",
+              "display": "T",
+              "inventory_quantity": 3,
+              "product_code": "MW-004",
+              "product_name": "만원요리 순두부찌개 밀키트",
+              "product_no": 4,
+              "selling": "T",
+              "selling_price": "10000.00",
+              "summary_description": "부드러운 순두부찌개"
+            }
+          ]
+        },
+        "generated_at": "2025-08-04T08:01:11.639131",
+        "recommendations": [
+          "WARNING: 2 products have low inventory. Consider restocking soon."
+        ],
+        "report_type": "inventory",
+        "summary": {
+          "low_stock": 2,
+          "out_of_stock": 0,
+          "stock_health": 60.0,
+          "total_products": 5,
+          "well_stocked": 3
+        }
+      },
+      "success": true
+    }
+  },
+  {
+    "name": "Sales Report",
+    "path": "/api/report/sales",
+    "method": "GET",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.19s",
+    "response": {
+      "report": {
+        "daily_trends": {
+          "2025-08-02": {
+            "count": 2,
+            "total": 0.0
+          },
+          "2025-08-03": {
+            "count": 2,
+            "total": 0.0
+          }
+        },
+        "generated_at": "2025-08-04T08:01:12.336839",
+        "period": {
+          "end": "2025-08-04",
+          "start": "2025-07-05"
+        },
+        "report_type": "sales",
+        "summary": {
+          "average_order_value": 0.0,
+          "total_orders": 4,
+          "total_revenue": 0.0,
+          "unique_products_sold": 0
+        },
+        "top_products": []
+      },
+      "success": true
+    }
+  },
+  {
+    "name": "NLP - Products",
+    "path": "/api/execute",
+    "method": "POST",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.17s",
+    "response": {
+      "command": "show products",
+      "intent": {
+        "action": "get_products",
+        "original_command": "show products",
+        "params": {}
+      },
+      "result": [
+        {
+          "created_date": "2025-07-05T07:58:46.022647",
+          "display": "T",
+          "inventory_quantity": 45,
+          "product_code": "MW-001",
+          "product_name": "만원요리 김치찌개 밀키트",
+          "product_no": 1,
+          "selling": "T",
+          "selling_price": "10000.00",
+          "summary_description": "집에서 즐기는 진짜 김치찌개"
+        },
+        {
+          "created_date": "2025-07-10T07:58:46.022660",
+          "display": "T",
+          "inventory_quantity": 12,
+          "product_code": "MW-002",
+          "product_name": "만원요리 된장찌개 밀키트",
+          "product_no": 2,
+          "selling": "T",
+          "selling_price": "10000.00",
+          "summary_description": "구수한 된장찌개 한 그릇"
+        },
+        {
+          "created_date": "2025-07-15T07:58:46.022665",
+          "display": "T",
+          "inventory_quantity": 8,
+          "product_code": "MW-003",
+          "product_name": "만원요리 부대찌개 밀키트",
+          "product_no": 3,
+          "selling": "T",
+          "selling_price": "12000.00",
+          "summary_description": "푸짐한 부대찌개 세트"
+        },
+        {
+          "created_date": "2025-07-20T07:58:46.022668",
+          "display": "T",
+          "inventory_quantity": 3,
+          "product_code": "MW-004",
+          "product_name": "만원요리 순두부찌개 밀키트",
+          "product_no": 4,
+          "selling": "T",
+          "selling_price": "10000.00",
+          "summary_description": "부드러운 순두부찌개"
+        },
+        {
+          "created_date": "2025-07-25T07:58:46.022672",
+          "display": "T",
+          "inventory_quantity": 25,
+          "product_code": "MW-005",
+          "product_name": "만원요리 갈비탕 밀키트",
+          "product_no": 5,
+          "selling": "T",
+          "selling_price": "15000.00",
+          "summary_description": "진한 갈비탕의 맛"
+        }
+      ],
+      "success": true
+    }
+  },
+  {
+    "name": "NLP - Orders",
+    "path": "/api/execute",
+    "method": "POST",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.17s",
+    "response": {
+      "command": "check today orders",
+      "intent": {
+        "action": "get_orders",
+        "original_command": "check today orders",
+        "params": {}
+      },
+      "result": [],
+      "success": true
+    }
+  },
+  {
+    "name": "NLP - Inventory",
+    "path": "/api/execute",
+    "method": "POST",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.17s",
+    "response": {
+      "command": "low stock items",
+      "intent": {
+        "action": "check_inventory",
+        "original_command": "low stock items",
+        "params": {
+          "threshold": 10
+        }
+      },
+      "result": {
+        "low_stock": [
+          {
+            "created_date": "2025-07-15T07:58:46.022665",
+            "display": "T",
+            "inventory_quantity": 8,
+            "product_code": "MW-003",
+            "product_name": "만원요리 부대찌개 밀키트",
+            "product_no": 3,
+            "selling": "T",
+            "selling_price": "12000.00",
+            "summary_description": "푸짐한 부대찌개 세트"
+          },
+          {
+            "created_date": "2025-07-20T07:58:46.022668",
+            "display": "T",
+            "inventory_quantity": 3,
+            "product_code": "MW-004",
+            "product_name": "만원요리 순두부찌개 밀키트",
+            "product_no": 4,
+            "selling": "T",
+            "selling_price": "10000.00",
+            "summary_description": "부드러운 순두부찌개"
+          }
+        ],
+        "out_of_stock": [],
+        "threshold": 10,
+        "total_products": 5
+      },
+      "success": true
+    }
+  },
+  {
+    "name": "All Tests",
+    "path": "/api/test/all",
+    "method": "GET",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.19s",
+    "response": {
+      "summary": {
+        "failed": 0,
+        "passed": 7,
+        "success_rate": "100.0%",
+        "total": 7
+      },
+      "system_initialized": true,
+      "tests": [
+        {
+          "endpoint": "/health",
+          "name": "Health Check",
+          "response": {
+            "service": "cafe24-automation",
+            "status": "healthy",
+            "system_initialized": true,
+            "timestamp": "2025-08-04T08:01:15.038085",
+            "version": "2.0.0"
+          },
+          "status": 200,
+          "success": true
+        },
+        {
+          "endpoint": "/api/products?limit=5",
+          "name": "Products API",
+          "response": {
+            "count": 5,
+            "products": [
+              {
+                "created_date": "2025-07-05T07:58:46.022647",
+                "display": "T",
+                "inventory_quantity": 45,
+                "product_code": "MW-001",
+                "product_name": "만원요리 김치찌개 밀키트",
+                "product_no": 1,
+                "selling": "T",
+                "selling_price": "10000.00",
+                "summary_description": "집에서 즐기는 진짜 김치찌개"
+              },
+              {
+                "created_date": "2025-07-10T07:58:46.022660",
+                "display": "T",
+                "inventory_quantity": 12,
+                "product_code": "MW-002",
+                "product_name": "만원요리 된장찌개 밀키트",
+                "product_no": 2,
+                "selling": "T",
+                "selling_price": "10000.00",
+                "summary_description": "구수한 된장찌개 한 그릇"
+              },
+              {
+                "created_date": "2025-07-15T07:58:46.022665",
+                "display": "T",
+                "inventory_quantity": 8,
+                "product_code": "MW-003",
+                "product_name": "만원요리 부대찌개 밀키트",
+                "product_no": 3,
+                "selling": "T",
+                "selling_price": "12000.00",
+                "summary_description": "푸짐한 부대찌개 세트"
+              },
+              {
+                "created_date": "2025-07-20T07:58:46.022668",
+                "display": "T",
+                "inventory_quantity": 3,
+                "product_code": "MW-004",
+                "product_name": "만원요리 순두부찌개 밀키트",
+                "product_no": 4,
+                "selling": "T",
+                "selling_price": "10000.00",
+                "summary_description": "부드러운 순두부찌개"
+              },
+              {
+                "created_date": "2025-07-25T07:58:46.022672",
+                "display": "T",
+                "inventory_quantity": 25,
+                "product_code": "MW-005",
+                "product_name": "만원요리 갈비탕 밀키트",
+                "product_no": 5,
+                "selling": "T",
+                "selling_price": "15000.00",
+                "summary_description": "진한 갈비탕의 맛"
+              }
+            ],
+            "success": true
+          },
+          "status": 200,
+          "success": true
+        },
+        {
+          "endpoint": "/api/orders?limit=5",
+          "name": "Orders API",
+          "response": {
+            "count": 0,
+            "orders": [],
+            "success": true
+          },
+          "status": 200,
+          "success": true
+        },
+        {
+          "endpoint": "/api/inventory?threshold=10",
+          "name": "Inventory API",
+          "response": {
+            "low_stock": [
+              {
+                "created_date": "2025-07-15T07:58:46.022665",
+                "display": "T",
+                "inventory_quantity": 8,
+                "product_code": "MW-003",
+                "product_name": "만원요리 부대찌개 밀키트",
+                "product_no": 3,
+                "selling": "T",
+                "selling_price": "12000.00",
+                "summary_description": "푸짐한 부대찌개 세트"
+              },
+              {
+                "created_date": "2025-07-20T07:58:46.022668",
+                "display": "T",
+                "inventory_quantity": 3,
+                "product_code": "MW-004",
+                "product_name": "만원요리 순두부찌개 밀키트",
+                "product_no": 4,
+                "selling": "T",
+                "selling_price": "10000.00",
+                "summary_description": "부드러운 순두부찌개"
+              }
+            ],
+            "low_stock_count": 2,
+            "out_of_stock": [],
+            "out_of_stock_count": 0,
+            "success": true,
+            "threshold": 10,
+            "total_products": 5
+          },
+          "status": 200,
+          "success": true
+        },
+        {
+          "endpoint": "/api/customers?limit=5",
+          "name": "Customers API",
+          "response": {
+            "count": 3,
+            "customers": [
+              {
+                "created_date": "2025-02-05T08:01:08.249012",
+                "email": "kim@example.com",
+                "group_name": "VIP",
+                "member_id": "customer001",
+                "name": "김철수",
+                "phone": "010-1234-5678",
+                "total_order_amount": "450000"
+              },
+              {
+                "created_date": "2025-05-06T08:01:08.249027",
+                "email": "lee@example.com",
+                "group_name": "일반",
+                "member_id": "customer002",
+                "name": "이영희",
+                "phone": "010-2345-6789",
+                "total_order_amount": "120000"
+              },
+              {
+                "created_date": "2025-07-28T08:01:08.249031",
+                "email": "park@example.com",
+                "group_name": "신규",
+                "member_id": "customer003",
+                "name": "박민수",
+                "phone": "010-3456-7890",
+                "total_order_amount": "30000"
+              }
+            ],
+            "success": true
+          },
+          "status": 200,
+          "success": true
+        },
+        {
+          "endpoint": "/api/sales/statistics?period=daily",
+          "name": "Sales Statistics API",
+          "response": {
+            "statistics": {
+              "average_order_value": "25000",
+              "best_selling_products": [
+                {
+                  "product_name": "만원요리 김치찌개 밀키트",
+                  "quantity": 12
+                },
+                {
+                  "product_name": "만원요리 된장찌개 밀키트",
+                  "quantity": 8
+                }
+              ],
+              "date": "2025-08-04",
+              "order_count": 5,
+              "period": "daily",
+              "total_sales": "125000"
+            },
+            "success": true
+          },
+          "status": 200,
+          "success": true
+        },
+        {
+          "endpoint": "/api/execute",
+          "name": "Natural Language API",
+          "response": {
+            "command": "상품 목록 보여줘",
+            "intent": {
+              "action": "get_products",
+              "original_command": "상품 목록 보여줘",
+              "params": {}
+            },
+            "result": [
+              {
+                "created_date": "2025-07-05T07:58:46.022647",
+                "display": "T",
+                "inventory_quantity": 45,
+                "product_code": "MW-001",
+                "product_name": "만원요리 김치찌개 밀키트",
+                "product_no": 1,
+                "selling": "T",
+                "selling_price": "10000.00",
+                "summary_description": "집에서 즐기는 진짜 김치찌개"
+              },
+              {
+                "created_date": "2025-07-10T07:58:46.022660",
+                "display": "T",
+                "inventory_quantity": 12,
+                "product_code": "MW-002",
+                "product_name": "만원요리 된장찌개 밀키트",
+                "product_no": 2,
+                "selling": "T",
+                "selling_price": "10000.00",
+                "summary_description": "구수한 된장찌개 한 그릇"
+              },
+              {
+                "created_date": "2025-07-15T07:58:46.022665",
+                "display": "T",
+                "inventory_quantity": 8,
+                "product_code": "MW-003",
+                "product_name": "만원요리 부대찌개 밀키트",
+                "product_no": 3,
+                "selling": "T",
+                "selling_price": "12000.00",
+                "summary_description": "푸짐한 부대찌개 세트"
+              },
+              {
+                "created_date": "2025-07-20T07:58:46.022668",
+                "display": "T",
+                "inventory_quantity": 3,
+                "product_code": "MW-004",
+                "product_name": "만원요리 순두부찌개 밀키트",
+                "product_no": 4,
+                "selling": "T",
+                "selling_price": "10000.00",
+                "summary_description": "부드러운 순두부찌개"
+              },
+              {
+                "created_date": "2025-07-25T07:58:46.022672",
+                "display": "T",
+                "inventory_quantity": 25,
+                "product_code": "MW-005",
+                "product_name": "만원요리 갈비탕 밀키트",
+                "product_no": 5,
+                "selling": "T",
+                "selling_price": "15000.00",
+                "summary_description": "진한 갈비탕의 맛"
+              }
+            ],
+            "success": true
+          },
+          "status": 200,
+          "success": true
+        }
+      ],
+      "timestamp": "2025-08-04T08:01:15.032241"
+    }
+  }
+]
