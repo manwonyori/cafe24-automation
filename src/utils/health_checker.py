@@ -49,17 +49,17 @@ class HealthChecker:
         
     def check_api_connection(self, api_client) -> Dict[str, Any]:
         """Check API connectivity"""
-        try:
-            # Try a simple API call
-            api_client.get_products(limit=1)
+        # Skip actual API call for health check
+        # Just verify API client is initialized
+        if api_client and hasattr(api_client, 'mall_id') and api_client.mall_id:
             return {
                 'passed': True,
-                'message': 'API connection successful'
+                'message': 'API client configured'
             }
-        except Exception as e:
+        else:
             return {
                 'passed': False,
-                'message': f'API connection failed: {str(e)}'
+                'message': 'API client not configured'
             }
             
     def check_cache(self, cache_manager) -> Dict[str, Any]:

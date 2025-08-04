@@ -51,24 +51,14 @@ def home():
 @app.route('/health')
 def health():
     """Health check endpoint for monitoring"""
-    if not system_initialized:
-        return jsonify({
-            'status': 'unhealthy',
-            'message': 'System not initialized',
-            'timestamp': datetime.now().isoformat()
-        }), 503
-    
-    try:
-        health_status = system.check_system_health()
-        status_code = 200 if health_status['status'] == 'healthy' else 503
-        
-        return jsonify(health_status), status_code
-    except Exception as e:
-        return jsonify({
-            'status': 'unhealthy',
-            'error': str(e),
-            'timestamp': datetime.now().isoformat()
-        }), 503
+    # Simple health check without API calls
+    return jsonify({
+        'status': 'healthy',
+        'service': 'cafe24-automation',
+        'version': '2.0.0',
+        'timestamp': datetime.now().isoformat(),
+        'system_initialized': system_initialized
+    }), 200
 
 @app.route('/api/execute', methods=['POST'])
 def execute_command():

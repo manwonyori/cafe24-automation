@@ -72,17 +72,12 @@ class Cafe24System:
     def _setup_logging(self):
         """Configure logging"""
         log_level = getattr(logging, self.config['log_level'])
-        log_file = os.getenv('CAFE24_LOG_FILE', 'logs/cafe24_system.log')
         
-        # Create logs directory if needed
-        os.makedirs(os.path.dirname(log_file), exist_ok=True)
-        
-        # Configure logger
+        # Configure logger - use only stream handler for Render deployment
         logging.basicConfig(
             level=log_level,
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(log_file, encoding='utf-8'),
                 logging.StreamHandler()
             ]
         )
