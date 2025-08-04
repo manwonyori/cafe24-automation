@@ -301,6 +301,17 @@
         .display-badge.displayed { background: #e3f2fd; color: #1565c0; }
         .display-badge.hidden { background: #f3e5f5; color: #6a1b9a; }
         
+        .margin-rate {
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .margin-rate.high { background: #e8f5e9; color: #2e7d32; }
+        .margin-rate.medium { background: #fff3e0; color: #f57c00; }
+        .margin-rate.low { background: #ffebee; color: #c62828; }
+        
         /* 차트 컨테이너 */
         .chart-container {
             background: white;
@@ -406,6 +417,11 @@
         <div class="header">
             <h1>🚀 Cafe24 고급 상품 관리 시스템</h1>
             <p>모든 상품 관리 기능을 한 곳에서 - 실시간 모니터링, 필터링, 대량 수정, 내보내기</p>
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <a href="/margin-dashboard" class="btn btn-secondary">💰 마진율 관리</a>
+                <a href="/vendor-dashboard" class="btn btn-secondary">🏢 업체 관리</a>
+                <a href="/advanced-dashboard" class="btn btn-secondary">📊 고급 대시보드</a>
+            </div>
         </div>
         
         <!-- 빠른 필터 버튼 -->
@@ -532,7 +548,9 @@
                     <tr>
                         <th>상품코드</th>
                         <th>상품명</th>
-                        <th>가격</th>
+                        <th>판매가</th>
+                        <th>공급가</th>
+                        <th>마진율</th>
                         <th>재고</th>
                         <th>진열상태</th>
                         <th>등록일</th>
@@ -590,7 +608,9 @@
             </div>
             <div>
                 <p style="margin-bottom: 20px;">필요한 템플릿을 선택하세요:</p>
-                <div style="display: grid; gap: 15px;">
+                
+                <h3 style="margin: 20px 0 15px 0; font-size: 16px; font-weight: 600;">기본 템플릿</h3>
+                <div style="display: grid; gap: 15px; margin-bottom: 25px;">
                     <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
                         <h4 style="margin-bottom: 10px;">📋 상품 일괄 등록</h4>
                         <p style="color: #666; font-size: 14px; margin-bottom: 10px;">새 상품을 대량으로 등록할 때 사용합니다.</p>
@@ -617,6 +637,42 @@
                         <p style="color: #666; font-size: 14px; margin-bottom: 10px;">판매가를 대량으로 수정할 때 사용합니다.</p>
                         <button class="btn btn-primary" onclick="downloadTemplate('price_update_template.xlsx')">
                             다운로드
+                        </button>
+                    </div>
+                </div>
+                
+                <h3 style="margin: 20px 0 15px 0; font-size: 16px; font-weight: 600; color: #1a73e8;">🎯 Cafe24 API 정확한 형식 템플릿</h3>
+                <div style="display: grid; gap: 15px;">
+                    <div style="border: 2px solid #1a73e8; padding: 15px; border-radius: 8px; background: #e8f1ff;">
+                        <h4 style="margin-bottom: 10px; color: #1a73e8;">📊 상품 등록 (API 형식)</h4>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 10px;">Cafe24 API 필드명과 정확히 일치하는 상품 등록 템플릿</p>
+                        <p style="color: #d32f2f; font-size: 12px; margin-bottom: 10px;">✓ 필수: product_name, price, display, selling</p>
+                        <button class="btn btn-primary" onclick="downloadTemplate('cafe24_product_create.xlsx')">
+                            API 형식 다운로드
+                        </button>
+                    </div>
+                    <div style="border: 2px solid #1a73e8; padding: 15px; border-radius: 8px; background: #e8f1ff;">
+                        <h4 style="margin-bottom: 10px; color: #1a73e8;">✏️ 상품 수정 (API 형식)</h4>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 10px;">Cafe24 API 형식으로 상품 정보 수정</p>
+                        <p style="color: #d32f2f; font-size: 12px; margin-bottom: 10px;">✓ 필수: product_no</p>
+                        <button class="btn btn-primary" onclick="downloadTemplate('cafe24_product_update.xlsx')">
+                            API 형식 다운로드
+                        </button>
+                    </div>
+                    <div style="border: 2px solid #1a73e8; padding: 15px; border-radius: 8px; background: #e8f1ff;">
+                        <h4 style="margin-bottom: 10px; color: #1a73e8;">📦 재고 수정 (API 형식)</h4>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 10px;">Cafe24 API 형식으로 재고 수량 업데이트</p>
+                        <p style="color: #d32f2f; font-size: 12px; margin-bottom: 10px;">✓ 필수: product_no, quantity</p>
+                        <button class="btn btn-primary" onclick="downloadTemplate('cafe24_inventory_update.xlsx')">
+                            API 형식 다운로드
+                        </button>
+                    </div>
+                    <div style="border: 2px solid #1a73e8; padding: 15px; border-radius: 8px; background: #e8f1ff;">
+                        <h4 style="margin-bottom: 10px; color: #1a73e8;">💰 가격 수정 (API 형식)</h4>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 10px;">Cafe24 API 형식으로 가격 정보 수정</p>
+                        <p style="color: #d32f2f; font-size: 12px; margin-bottom: 10px;">✓ 필수: product_no, price</p>
+                        <button class="btn btn-primary" onclick="downloadTemplate('cafe24_price_update.xlsx')">
+                            API 형식 다운로드
                         </button>
                     </div>
                 </div>
@@ -736,8 +792,20 @@
                 // 상품명
                 row.insertCell().textContent = productName;
                 
-                // 가격
+                // 판매가
                 row.insertCell().textContent = '₩' + parseInt(product.price).toLocaleString();
+                
+                // 공급가
+                row.insertCell().textContent = '₩' + parseInt(product.supply_price || 0).toLocaleString();
+                
+                // 마진율
+                const marginCell = row.insertCell();
+                const marginRate = product.margin_rate || 0;
+                let marginClass = 'margin-rate ';
+                if (marginRate >= 30) marginClass += 'high';
+                else if (marginRate >= 10) marginClass += 'medium';
+                else marginClass += 'low';
+                marginCell.innerHTML = `<span class="${marginClass}">${marginRate.toFixed(1)}%</span>`;
                 
                 // 재고
                 const stockCell = row.insertCell();

@@ -16,6 +16,8 @@ from pathlib import Path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from auto_token_manager import get_token_manager
 from enhanced_products_api import products_bp, ProductAPI, register_routes
+from margin_management import margin_bp, MarginManager, register_margin_routes
+from vendor_management import vendor_bp, VendorManager, register_vendor_routes
 
 # 토큰 매니저 초기화 및 자동 갱신 시작
 token_manager = get_token_manager()
@@ -55,6 +57,16 @@ def dashboard():
 def advanced_dashboard():
     """고급 대시보드 페이지"""
     return render_template('advanced_dashboard.html')
+
+@app.route('/margin-dashboard')
+def margin_dashboard():
+    """마진율 관리 대시보드"""
+    return render_template('margin_dashboard.html')
+
+@app.route('/vendor-dashboard')
+def vendor_dashboard():
+    """업체 관리 대시보드"""
+    return render_template('vendor_dashboard.html')
 
 @app.route('/api/command', methods=['POST'])
 def process_command():
@@ -274,7 +286,11 @@ def download_template():
             'product_upload_template.xlsx',
             'product_update_template.xlsx',
             'inventory_update_template.xlsx',
-            'price_update_template.xlsx'
+            'price_update_template.xlsx',
+            'cafe24_product_create.xlsx',
+            'cafe24_product_update.xlsx',
+            'cafe24_inventory_update.xlsx',
+            'cafe24_price_update.xlsx'
         ]
         
         if filename not in allowed_files:
@@ -381,6 +397,16 @@ def get_headers():
 product_api = ProductAPI(get_headers, get_mall_id)
 register_routes(products_bp, product_api)
 app.register_blueprint(products_bp, url_prefix='/api/products')
+
+# Margin Management API 초기화
+margin_manager = MarginManager(get_headers, get_mall_id)
+register_margin_routes(margin_bp, margin_manager)
+app.register_blueprint(margin_bp, url_prefix='/api/margin')
+
+# Vendor Management API 초기화
+vendor_manager = VendorManager(get_headers, get_mall_id)
+register_vendor_routes(vendor_bp, vendor_manager)
+app.register_blueprint(vendor_bp, url_prefix='/api/vendor')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

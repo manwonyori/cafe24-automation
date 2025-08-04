@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마진율 관리 대시보드 - Cafe24 자동화</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a73e8;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: #666;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover {
+            color: #1a73e8;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+        
+        /* 마진율 요약 카드 */
+        .margin-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        
+        .summary-card h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        
+        .summary-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .summary-card.profit { color: #2e7d32; }
+        .summary-card.loss { color: #d32f2f; }
+        .summary-card.warning { color: #f57c00; }
+        
+        /* 마진율 구간별 분석 */
+        .margin-ranges {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+        
+        .range-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .range-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .range-card:hover {
+            border-color: #1a73e8;
+            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.15);
+        }
+        
+        .range-card.selected {
+            border-color: #1a73e8;
+            background: #e8f1ff;
+        }
+        
+        .range-card h4 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .range-card .count {
+            background: #1a73e8;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        .range-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        .range-info div {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .range-info .label {
+            color: #666;
+        }
+        
+        .range-info .value {
+            font-weight: 600;
+        }
+        
+        /* 상품 리스트 */
+        .products-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .section-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: #1a73e8;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #1557b0;
+        }
+        
+        .btn-secondary {
+            background: #f1f3f4;
+            color: #5f6368;
+        }
+        
+        .btn-secondary:hover {
+            background: #e8eaed;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        /* 테이블 */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #5f6368;
+            font-size: 14px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .checkbox-cell {
+            width: 40px;
+        }
+        
+        .margin-rate {
+            font-weight: 600;
+        }
+        
+        .margin-rate.high { color: #2e7d32; }
+        .margin-rate.medium { color: #f57c00; }
+        .margin-rate.low { color: #d32f2f; }
+        
+        /* 모달 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .modal-header h3 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .form-group .help-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .margin-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .margin-input-group input {
+            flex: 1;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1a73e8;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 툴팁 */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💰 마진율 관리 대시보드</h1>
+        <div class="nav-links">
+            <a href="/dashboard">상품 관리</a>
+            <a href="/vendor-dashboard">업체 관리</a>
+            <a href="/advanced-dashboard">고급 대시보드</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- 마진율 요약 -->
+        <div class="margin-summary">
+            <div class="summary-card">
+                <h3>평균 마진율</h3>
+                <div class="value" id="avgMargin">-</div>
+                <small>전체 상품 기준</small>
+            </div>
+            <div class="summary-card profit">
+                <h3>우수 마진 상품</h3>
+                <div class="value" id="highMarginCount">-</div>
+                <small>30% 이상</small>
+            </div>
+            <div class="summary-card warning">
+                <h3>저마진 상품</h3>
+                <div class="value" id="lowMarginCount">-</div>
+                <small>10% 미만</small>
+            </div>
+            <div class="summary-card loss">
+                <h3>적자 상품</h3>
+                <div class="value" id="lossCount">-</div>
+                <small>마이너스 마진</small>
+            </div>
+        </div>
+        
+        <!-- 마진율 구간별 분석 -->
+        <div class="margin-ranges">
+            <h2>마진율 구간별 분석</h2>
+            <div class="range-grid" id="marginRanges">
+                <!-- 동적으로 생성됨 -->
+            </div>
+        </div>
+        
+        <!-- 상품 리스트 -->
+        <div class="products-section">
+            <div class="section-header">
+                <h2 id="productSectionTitle">전체 상품</h2>
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" onclick="showMarginCalculator()">
+                        📊 마진율 계산기
+                    </button>
+                    <button class="btn btn-primary" onclick="showBulkPriceUpdate()">
+                        💰 가격 일괄 수정
+                    </button>
+                    <button class="btn btn-success" onclick="exportToExcel()">
+                        📥 엑셀 다운로드
+                    </button>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <div id="productsLoading" class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>상품 정보를 불러오는 중...</p>
+                </div>
+                <table id="productsTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th class="checkbox-cell">
+                                <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                            </th>
+                            <th>상품번호</th>
+                            <th>상품코드</th>
+                            <th>상품명</th>
+                            <th>공급가</th>
+                            <th>판매가</th>
+                            <th>마진율</th>
+                            <th>이익금</th>
+                            <th>재고</th>
+                            <th>재고가치</th>
+                            <th>상태</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productsTableBody">
+                        <!-- 동적으로 생성됨 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 가격 일괄 수정 모달 -->
+    <div class="modal" id="bulkPriceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>가격 일괄 수정</h3>
+                <button class="modal-close" onclick="closeBulkPriceModal()">×</button>
+            </div>
+            <form onsubmit="submitBulkPriceUpdate(event)">
+                <div class="form-group">
+                    <label>선택된 상품 수</label>
+                    <input type="text" id="selectedCount" readonly value="0개">
+                </div>
+                
+                <div class="form-group">
+                    <label>목표 마진율 (%)</label>
+                    <div class="margin-input-group">
+                        <input type="number" id="targetMargin" min="-100" max="500" step="0.1" required>
+                        <span>%</span>
+                    </div>
+                    <div class="help-text">현재 평균 마진율: <span id="currentAvgMargin">-</span>%</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>수정 대상</label>
+                    <select id="updateType" required>
+                        <option value="selling">판매가 수정 (공급가 기준)</option>
+                        <option value="supply">공급가 수정 (판매가 기준)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="roundPrice" checked>
+                        100원 단위로 반올림
+                    </label>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 30px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">
+                        가격 수정 실행
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="closeBulkPriceModal()" style="flex: 1;">
+                        취소
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 마진율 계산기 모달 -->
+    <div class="modal" id="marginCalculatorModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>마진율 계산기</h3>
+                <button class="modal-close" onclick="closeMarginCalculator()">×</button>
+            </div>
+            <form>
+                <div class="form-group">
+                    <label>공급가</label>
+                    <input type="number" id="calcSupplyPrice" min="0" step="100" onchange="calculateMargin()">
+                </div>
+                
+                <div class="form-group">
+                    <label>판매가</label>
+                    <input type="number" id="calcSellingPrice" min="0" step="100" onchange="calculateMargin()">
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <div style="color: #666; font-size: 14px;">마진율</div>
+                            <div style="font-size: 24px; font-weight: 700; color: #1a73e8;" id="calcMarginRate">-%</div>
+                        </div>
+                        <div>
+                            <div style="color: #666; font-size: 14px;">이익금</div>
+                            <div style="font-size: 24px; font-weight: 700; color: #2e7d32;" id="calcProfit">₩0</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="button" class="btn btn-secondary" onclick="closeMarginCalculator()" style="width: 100%; margin-top: 20px;">
+                    닫기
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // 전역 변수
+        let allProducts = [];
+        let selectedProducts = new Set();
+        let currentRangeFilter = null;
+        let marginAnalysis = null;
+        
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', () => {
+            loadMarginAnalysis();
+        });
+        
+        // 마진율 분석 데이터 로드
+        async function loadMarginAnalysis() {
+            try {
+                const response = await fetch('/api/margin/analysis');
+                const data = await response.json();
+                
+                if (data.success) {
+                    marginAnalysis = data;
+                    updateMarginSummary(data);
+                    updateMarginRanges(data.margin_ranges);
+                    // 전체 상품 로드
+                    loadProductsByRange(null);
+                }
+            } catch (error) {
+                console.error('마진율 분석 로드 실패:', error);
+            }
+        }
+        
+        // 마진율 요약 업데이트
+        function updateMarginSummary(data) {
+            document.getElementById('avgMargin').textContent = data.average_margin_rate.toFixed(1) + '%';
+            
+            let highMarginCount = 0;
+            let lowMarginCount = 0;
+            let lossCount = 0;
+            
+            for (const [range, info] of Object.entries(data.margin_ranges)) {
+                if (range.includes('우수') || range.includes('최우수')) {
+                    highMarginCount += info.count;
+                } else if (range.includes('저마진')) {
+                    lowMarginCount += info.count;
+                } else if (range.includes('적자')) {
+                    lossCount += info.count;
+                }
+            }
+            
+            document.getElementById('highMarginCount').textContent = highMarginCount + '개';
+            document.getElementById('lowMarginCount').textContent = lowMarginCount + '개';
+            document.getElementById('lossCount').textContent = lossCount + '개';
+        }
+        
+        // 마진율 구간 카드 업데이트
+        function updateMarginRanges(ranges) {
+            const container = document.getElementById('marginRanges');
+            container.innerHTML = '';
+            
+            const rangeOrder = [
+                '적자 (-100% ~ 0%)',
+                '저마진 (0% ~ 10%)',
+                '일반 (10% ~ 20%)',
+                '양호 (20% ~ 30%)',
+                '우수 (30% ~ 50%)',
+                '최우수 (50% 이상)'
+            ];
+            
+            rangeOrder.forEach(rangeName => {
+                if (ranges[rangeName]) {
+                    const info = ranges[rangeName];
+                    const card = document.createElement('div');
+                    card.className = 'range-card';
+                    card.onclick = () => selectMarginRange(rangeName);
+                    
+                    card.innerHTML = `
+                        <h4>
+                            ${rangeName}
+                            <span class="count">${info.count}</span>
+                        </h4>
+                        <div class="range-info">
+                            <div>
+                                <span class="label">재고가치</span>
+                                <span class="value">₩${info.total_value.toLocaleString()}</span>
+                            </div>
+                            <div>
+                                <span class="label">평균마진</span>
+                                <span class="value">${calculateRangeAverage(info)}%</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    container.appendChild(card);
+                }
+            });
+        }
+        
+        // 구간 평균 마진율 계산
+        function calculateRangeAverage(rangeInfo) {
+            if (rangeInfo.count === 0) return '0.0';
+            const totalMargin = rangeInfo.products.reduce((sum, p) => sum + p.margin_rate, 0);
+            return (totalMargin / rangeInfo.count).toFixed(1);
+        }
+        
+        // 마진율 구간 선택
+        function selectMarginRange(rangeName) {
+            // 기존 선택 해제
+            document.querySelectorAll('.range-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // 새로운 선택
+            event.currentTarget.classList.add('selected');
+            currentRangeFilter = rangeName;
+            
+            // 제목 업데이트
+            document.getElementById('productSectionTitle').textContent = rangeName + ' 상품';
+            
+            // 해당 구간 상품 로드
+            loadProductsByRange(rangeName);
+        }
+        
+        // 구간별 상품 로드
+        function loadProductsByRange(rangeName) {
+            document.getElementById('productsLoading').style.display = 'block';
+            document.getElementById('productsTable').style.display = 'none';
+            
+            if (!marginAnalysis) return;
+            
+            let products = [];
+            if (rangeName && marginAnalysis.margin_ranges[rangeName]) {
+                products = marginAnalysis.margin_ranges[rangeName].products;
+            } else {
+                // 전체 상품
+                for (const range of Object.values(marginAnalysis.margin_ranges)) {
+                    products = products.concat(range.products);
+                }
+            }
+            
+            allProducts = products;
+            displayProducts(products);
+            
+            document.getElementById('productsLoading').style.display = 'none';
+            document.getElementById('productsTable').style.display = 'table';
+        }
+        
+        // 상품 테이블 표시
+        function displayProducts(products) {
+            const tbody = document.getElementById('productsTableBody');
+            tbody.innerHTML = '';
+            
+            products.forEach(product => {
+                const row = tbody.insertRow();
+                
+                // 체크박스
+                const checkCell = row.insertCell();
+                checkCell.innerHTML = `<input type="checkbox" value="${product.product_no}" onchange="toggleProductSelect(${product.product_no})">`;
+                
+                // 상품번호
+                row.insertCell().textContent = product.product_no;
+                
+                // 상품코드
+                row.insertCell().textContent = product.product_code || '-';
+                
+                // 상품명
+                row.insertCell().textContent = product.product_name;
+                
+                // 공급가
+                row.insertCell().textContent = '₩' + product.supply_price.toLocaleString();
+                
+                // 판매가
+                row.insertCell().textContent = '₩' + product.selling_price.toLocaleString();
+                
+                // 마진율
+                const marginCell = row.insertCell();
+                const marginClass = product.margin_rate >= 30 ? 'high' : 
+                                  product.margin_rate >= 10 ? 'medium' : 'low';
+                marginCell.innerHTML = `<span class="margin-rate ${marginClass}">${product.margin_rate.toFixed(1)}%</span>`;
+                
+                // 이익금
+                row.insertCell().textContent = '₩' + product.profit.toLocaleString();
+                
+                // 재고
+                row.insertCell().textContent = product.quantity + '개';
+                
+                // 재고가치
+                row.insertCell().textContent = '₩' + product.inventory_value.toLocaleString();
+                
+                // 상태
+                const statusCell = row.insertCell();
+                const displayStatus = product.display === 'T' ? '진열' : '미진열';
+                const sellingStatus = product.selling === 'T' ? '판매중' : '판매중지';
+                statusCell.innerHTML = `${displayStatus} / ${sellingStatus}`;
+                
+                // 작업
+                const actionCell = row.insertCell();
+                actionCell.innerHTML = `
+                    <button class="btn btn-sm btn-primary" onclick="editProductPrice(${product.product_no})">
+                        가격수정
+                    </button>
+                `;
+            });
+        }
+        
+        // 상품 선택 토글
+        function toggleProductSelect(productNo) {
+            if (selectedProducts.has(productNo)) {
+                selectedProducts.delete(productNo);
+            } else {
+                selectedProducts.add(productNo);
+            }
+            updateSelectedCount();
+        }
+        
+        // 전체 선택/해제
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll').checked;
+            const checkboxes = document.querySelectorAll('#productsTableBody input[type="checkbox"]');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll;
+                const productNo = parseInt(checkbox.value);
+                if (selectAll) {
+                    selectedProducts.add(productNo);
+                } else {
+                    selectedProducts.delete(productNo);
+                }
+            });
+            
+            updateSelectedCount();
+        }
+        
+        // 선택된 상품 수 업데이트
+        function updateSelectedCount() {
+            document.getElementById('selectedCount').value = selectedProducts.size + '개';
+        }
+        
+        // 가격 일괄 수정 모달 표시
+        function showBulkPriceUpdate() {
+            if (selectedProducts.size === 0) {
+                alert('수정할 상품을 선택해주세요.');
+                return;
+            }
+            
+            document.getElementById('bulkPriceModal').classList.add('active');
+            updateSelectedCount();
+            
+            // 선택된 상품들의 평균 마진율 계산
+            let totalMargin = 0;
+            let count = 0;
+            
+            allProducts.forEach(product => {
+                if (selectedProducts.has(product.product_no)) {
+                    totalMargin += product.margin_rate;
+                    count++;
+                }
+            });
+            
+            if (count > 0) {
+                document.getElementById('currentAvgMargin').textContent = (totalMargin / count).toFixed(1);
+            }
+        }
+        
+        // 가격 일괄 수정 모달 닫기
+        function closeBulkPriceModal() {
+            document.getElementById('bulkPriceModal').classList.remove('active');
+        }
+        
+        // 가격 일괄 수정 제출
+        async function submitBulkPriceUpdate(event) {
+            event.preventDefault();
+            
+            if (selectedProducts.size === 0) return;
+            
+            const targetMargin = parseFloat(document.getElementById('targetMargin').value);
+            const updateType = document.getElementById('updateType').value;
+            
+            if (confirm(`선택한 ${selectedProducts.size}개 상품의 ${updateType === 'selling' ? '판매가' : '공급가'}를 목표 마진율 ${targetMargin}%로 수정하시겠습니까?`)) {
+                try {
+                    const response = await fetch('/api/margin/update-prices', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            target_margin: targetMargin,
+                            product_nos: Array.from(selectedProducts),
+                            update_type: updateType
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        alert(`가격 수정 완료!\n성공: ${data.success_count}개\n실패: ${data.failed_count}개`);
+                        closeBulkPriceModal();
+                        // 데이터 새로고침
+                        loadMarginAnalysis();
+                    } else {
+                        alert('가격 수정 중 오류가 발생했습니다: ' + data.error);
+                    }
+                } catch (error) {
+                    alert('가격 수정 중 오류가 발생했습니다.');
+                    console.error(error);
+                }
+            }
+        }
+        
+        // 마진율 계산기 표시
+        function showMarginCalculator() {
+            document.getElementById('marginCalculatorModal').classList.add('active');
+        }
+        
+        // 마진율 계산기 닫기
+        function closeMarginCalculator() {
+            document.getElementById('marginCalculatorModal').classList.remove('active');
+        }
+        
+        // 마진율 계산
+        function calculateMargin() {
+            const supplyPrice = parseFloat(document.getElementById('calcSupplyPrice').value) || 0;
+            const sellingPrice = parseFloat(document.getElementById('calcSellingPrice').value) || 0;
+            
+            if (supplyPrice > 0) {
+                const marginRate = ((sellingPrice - supplyPrice) / supplyPrice) * 100;
+                const profit = sellingPrice - supplyPrice;
+                
+                document.getElementById('calcMarginRate').textContent = marginRate.toFixed(1) + '%';
+                document.getElementById('calcProfit').textContent = '₩' + profit.toLocaleString();
+            } else {
+                document.getElementById('calcMarginRate').textContent = '-%';
+                document.getElementById('calcProfit').textContent = '₩0';
+            }
+        }
+        
+        // 개별 상품 가격 수정
+        function editProductPrice(productNo) {
+            const product = allProducts.find(p => p.product_no === productNo);
+            if (!product) return;
+            
+            const newPrice = prompt(`새로운 판매가를 입력하세요.\n현재 판매가: ₩${product.selling_price.toLocaleString()}\n공급가: ₩${product.supply_price.toLocaleString()}`);
+            
+            if (newPrice && !isNaN(newPrice)) {
+                updateSingleProductPrice(productNo, parseFloat(newPrice));
+            }
+        }
+        
+        // 단일 상품 가격 업데이트
+        async function updateSingleProductPrice(productNo, newPrice) {
+            try {
+                const response = await fetch('/api/margin/update-prices', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        product_nos: [productNo],
+                        update_type: 'selling',
+                        target_margin: 0, // 직접 가격 입력이므로 마진율 계산 불필요
+                        new_price: newPrice
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('가격이 수정되었습니다.');
+                    loadMarginAnalysis(); // 데이터 새로고침
+                } else {
+                    alert('가격 수정 중 오류가 발생했습니다.');
+                }
+            } catch (error) {
+                alert('가격 수정 중 오류가 발생했습니다.');
+                console.error(error);
+            }
+        }
+        
+        // 엑셀 다운로드
+        function exportToExcel() {
+            window.location.href = '/api/products/export?format=excel&include_margin=true';
+        }
+    </script>
+</body>
+</html>

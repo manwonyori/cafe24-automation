@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>업체 관리 대시보드 - Cafe24 자동화</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a73e8;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: #666;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover {
+            color: #1a73e8;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+        
+        /* 탭 네비게이션 */
+        .tab-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: none;
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active {
+            background: #1a73e8;
+            color: white;
+        }
+        
+        .tab-btn:hover:not(.active) {
+            background: #f1f3f4;
+        }
+        
+        /* 섹션 스타일 */
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .section-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        /* 버튼 스타일 */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: #1a73e8;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #1557b0;
+        }
+        
+        .btn-secondary {
+            background: #f1f3f4;
+            color: #5f6368;
+        }
+        
+        .btn-secondary:hover {
+            background: #e8eaed;
+        }
+        
+        /* 업체 카드 그리드 */
+        .vendor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .vendor-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        
+        .vendor-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .vendor-card h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .vendor-info {
+            display: grid;
+            gap: 10px;
+            font-size: 14px;
+        }
+        
+        .vendor-info-row {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .vendor-info-label {
+            color: #666;
+        }
+        
+        .vendor-info-value {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .vendor-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        /* 테이블 스타일 */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #5f6368;
+            font-size: 14px;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        /* 모달 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .modal-header h3 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        /* 폼 스타일 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        /* 로딩 */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1a73e8;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 통계 카드 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-card h4 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a73e8;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏢 업체 관리 대시보드</h1>
+        <div class="nav-links">
+            <a href="/dashboard">상품 관리</a>
+            <a href="/margin-dashboard">마진율 관리</a>
+            <a href="/advanced-dashboard">고급 대시보드</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- 탭 네비게이션 -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="showTab('suppliers')">공급업체</button>
+            <button class="tab-btn" onclick="showTab('manufacturers')">제조사</button>
+            <button class="tab-btn" onclick="showTab('brands')">브랜드</button>
+            <button class="tab-btn" onclick="showTab('shipping')">배송업체</button>
+        </div>
+        
+        <!-- 공급업체 섹션 -->
+        <div class="section active" id="suppliersSection">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>전체 공급업체</h4>
+                    <div class="value" id="totalSuppliers">-</div>
+                </div>
+                <div class="stat-card">
+                    <h4>활성 공급업체</h4>
+                    <div class="value" id="activeSuppliers">-</div>
+                </div>
+                <div class="stat-card">
+                    <h4>등록된 상품 수</h4>
+                    <div class="value" id="supplierProducts">-</div>
+                </div>
+            </div>
+            
+            <div class="section-header">
+                <h2>공급업체 관리</h2>
+                <button class="btn btn-primary" onclick="showAddSupplierModal()">
+                    + 새 공급업체 등록
+                </button>
+            </div>
+            
+            <div id="suppliersLoading" class="loading">
+                <div class="loading-spinner"></div>
+                <p>공급업체 정보를 불러오는 중...</p>
+            </div>
+            
+            <div class="vendor-grid" id="suppliersGrid" style="display: none;">
+                <!-- 동적으로 생성됨 -->
+            </div>
+        </div>
+        
+        <!-- 제조사 섹션 -->
+        <div class="section" id="manufacturersSection">
+            <div class="section-header">
+                <h2>제조사 관리</h2>
+                <button class="btn btn-primary" onclick="showAddManufacturerModal()">
+                    + 새 제조사 등록
+                </button>
+            </div>
+            
+            <div id="manufacturersLoading" class="loading">
+                <div class="loading-spinner"></div>
+                <p>제조사 정보를 불러오는 중...</p>
+            </div>
+            
+            <div class="table-container">
+                <table id="manufacturersTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>제조사 코드</th>
+                            <th>제조사명</th>
+                            <th>대표자</th>
+                            <th>연락처</th>
+                            <th>홈페이지</th>
+                            <th>상태</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody id="manufacturersTableBody">
+                        <!-- 동적으로 생성됨 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 브랜드 섹션 -->
+        <div class="section" id="brandsSection">
+            <div class="section-header">
+                <h2>브랜드 관리</h2>
+                <button class="btn btn-primary" onclick="showAddBrandModal()">
+                    + 새 브랜드 등록
+                </button>
+            </div>
+            
+            <div id="brandsLoading" class="loading">
+                <div class="loading-spinner"></div>
+                <p>브랜드 정보를 불러오는 중...</p>
+            </div>
+            
+            <div class="vendor-grid" id="brandsGrid" style="display: none;">
+                <!-- 동적으로 생성됨 -->
+            </div>
+        </div>
+        
+        <!-- 배송업체 섹션 -->
+        <div class="section" id="shippingSection">
+            <div class="section-header">
+                <h2>배송업체 목록</h2>
+            </div>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>배송업체 코드</th>
+                            <th>배송업체명</th>
+                            <th>배송추적 URL</th>
+                            <th>상태</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shippingTableBody">
+                        <!-- 동적으로 생성됨 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 공급업체 추가 모달 -->
+    <div class="modal" id="addSupplierModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>새 공급업체 등록</h3>
+                <button class="modal-close" onclick="closeModal('addSupplierModal')">×</button>
+            </div>
+            <form onsubmit="submitSupplier(event)">
+                <div class="form-group">
+                    <label>공급업체명 *</label>
+                    <input type="text" name="supplier_name" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>담당자명</label>
+                        <input type="text" name="manager_name">
+                    </div>
+                    <div class="form-group">
+                        <label>담당자 연락처</label>
+                        <input type="tel" name="manager_phone">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>담당자 이메일</label>
+                    <input type="email" name="manager_email">
+                </div>
+                
+                <div class="form-group">
+                    <label>사업자등록번호</label>
+                    <input type="text" name="registration_no" placeholder="000-00-00000">
+                </div>
+                
+                <div class="form-group">
+                    <label>주소</label>
+                    <input type="text" name="address">
+                </div>
+                
+                <div class="form-group">
+                    <label>메모</label>
+                    <textarea name="memo"></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 30px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">등록</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addSupplierModal')" style="flex: 1;">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 제조사 추가 모달 -->
+    <div class="modal" id="addManufacturerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>새 제조사 등록</h3>
+                <button class="modal-close" onclick="closeModal('addManufacturerModal')">×</button>
+            </div>
+            <form onsubmit="submitManufacturer(event)">
+                <div class="form-group">
+                    <label>제조사명 *</label>
+                    <input type="text" name="manufacturer_name" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>대표자명</label>
+                        <input type="text" name="president_name">
+                    </div>
+                    <div class="form-group">
+                        <label>연락처</label>
+                        <input type="tel" name="phone">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>이메일</label>
+                    <input type="email" name="email">
+                </div>
+                
+                <div class="form-group">
+                    <label>홈페이지</label>
+                    <input type="url" name="homepage_url" placeholder="https://">
+                </div>
+                
+                <div class="form-group">
+                    <label>주소</label>
+                    <input type="text" name="address">
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 30px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">등록</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addManufacturerModal')" style="flex: 1;">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 브랜드 추가 모달 -->
+    <div class="modal" id="addBrandModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>새 브랜드 등록</h3>
+                <button class="modal-close" onclick="closeModal('addBrandModal')">×</button>
+            </div>
+            <form onsubmit="submitBrand(event)">
+                <div class="form-group">
+                    <label>브랜드명 *</label>
+                    <input type="text" name="brand_name" required>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 30px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">등록</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addBrandModal')" style="flex: 1;">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // 전역 변수
+        let suppliers = [];
+        let manufacturers = [];
+        let brands = [];
+        let shippingCompanies = [];
+        
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', () => {
+            loadSuppliers();
+            loadShippingCompanies();
+        });
+        
+        // 탭 전환
+        function showTab(tab) {
+            // 모든 탭 버튼과 섹션 비활성화
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
+            
+            // 선택된 탭 활성화
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Section').classList.add('active');
+            
+            // 데이터 로드
+            switch(tab) {
+                case 'suppliers':
+                    loadSuppliers();
+                    break;
+                case 'manufacturers':
+                    loadManufacturers();
+                    break;
+                case 'brands':
+                    loadBrands();
+                    break;
+                case 'shipping':
+                    // 이미 로드됨
+                    break;
+            }
+        }
+        
+        // 공급업체 로드
+        async function loadSuppliers() {
+            document.getElementById('suppliersLoading').style.display = 'block';
+            document.getElementById('suppliersGrid').style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/vendor/suppliers');
+                const data = await response.json();
+                
+                if (data.success) {
+                    suppliers = data.suppliers;
+                    displaySuppliers(data.suppliers);
+                    updateSupplierStats(data.suppliers);
+                }
+            } catch (error) {
+                console.error('공급업체 로드 실패:', error);
+            } finally {
+                document.getElementById('suppliersLoading').style.display = 'none';
+                document.getElementById('suppliersGrid').style.display = 'grid';
+            }
+        }
+        
+        // 공급업체 통계 업데이트
+        function updateSupplierStats(suppliers) {
+            document.getElementById('totalSuppliers').textContent = suppliers.length;
+            
+            const activeCount = suppliers.filter(s => s.use_supplier === 'T').length;
+            document.getElementById('activeSuppliers').textContent = activeCount;
+            
+            const totalProducts = suppliers.reduce((sum, s) => sum + (s.product_count || 0), 0);
+            document.getElementById('supplierProducts').textContent = totalProducts;
+        }
+        
+        // 공급업체 표시
+        function displaySuppliers(suppliers) {
+            const grid = document.getElementById('suppliersGrid');
+            grid.innerHTML = '';
+            
+            suppliers.forEach(supplier => {
+                const card = document.createElement('div');
+                card.className = 'vendor-card';
+                
+                card.innerHTML = `
+                    <h3>${supplier.supplier_name}</h3>
+                    <div class="vendor-info">
+                        <div class="vendor-info-row">
+                            <span class="vendor-info-label">공급업체 코드</span>
+                            <span class="vendor-info-value">${supplier.supplier_code}</span>
+                        </div>
+                        <div class="vendor-info-row">
+                            <span class="vendor-info-label">담당자</span>
+                            <span class="vendor-info-value">${supplier.supplier_manager_name || '-'}</span>
+                        </div>
+                        <div class="vendor-info-row">
+                            <span class="vendor-info-label">연락처</span>
+                            <span class="vendor-info-value">${supplier.supplier_manager_phone || '-'}</span>
+                        </div>
+                        <div class="vendor-info-row">
+                            <span class="vendor-info-label">등록 상품</span>
+                            <span class="vendor-info-value">${supplier.product_count || 0}개</span>
+                        </div>
+                        <div class="vendor-info-row">
+                            <span class="vendor-info-label">상태</span>
+                            <span class="vendor-info-value">${supplier.use_supplier === 'T' ? '활성' : '비활성'}</span>
+                        </div>
+                    </div>
+                    <div class="vendor-actions">
+                        <button class="btn btn-secondary" onclick="editSupplier('${supplier.supplier_code}')">수정</button>
+                        <button class="btn btn-secondary" onclick="viewSupplierProducts('${supplier.supplier_code}')">상품 보기</button>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+        
+        // 제조사 로드
+        async function loadManufacturers() {
+            document.getElementById('manufacturersLoading').style.display = 'block';
+            document.getElementById('manufacturersTable').style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/vendor/manufacturers');
+                const data = await response.json();
+                
+                if (data.success) {
+                    manufacturers = data.manufacturers;
+                    displayManufacturers(data.manufacturers);
+                }
+            } catch (error) {
+                console.error('제조사 로드 실패:', error);
+            } finally {
+                document.getElementById('manufacturersLoading').style.display = 'none';
+                document.getElementById('manufacturersTable').style.display = 'table';
+            }
+        }
+        
+        // 제조사 표시
+        function displayManufacturers(manufacturers) {
+            const tbody = document.getElementById('manufacturersTableBody');
+            tbody.innerHTML = '';
+            
+            manufacturers.forEach(manufacturer => {
+                const row = tbody.insertRow();
+                
+                row.insertCell().textContent = manufacturer.manufacturer_code;
+                row.insertCell().textContent = manufacturer.manufacturer_name;
+                row.insertCell().textContent = manufacturer.president_name || '-';
+                row.insertCell().textContent = manufacturer.phone || '-';
+                
+                const urlCell = row.insertCell();
+                if (manufacturer.homepage_url) {
+                    urlCell.innerHTML = `<a href="${manufacturer.homepage_url}" target="_blank">${manufacturer.homepage_url}</a>`;
+                } else {
+                    urlCell.textContent = '-';
+                }
+                
+                row.insertCell().textContent = manufacturer.use_manufacturer === 'T' ? '활성' : '비활성';
+                
+                const actionCell = row.insertCell();
+                actionCell.innerHTML = `
+                    <button class="btn btn-secondary" onclick="editManufacturer('${manufacturer.manufacturer_code}')">수정</button>
+                `;
+            });
+        }
+        
+        // 브랜드 로드
+        async function loadBrands() {
+            document.getElementById('brandsLoading').style.display = 'block';
+            document.getElementById('brandsGrid').style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/vendor/brands');
+                const data = await response.json();
+                
+                if (data.success) {
+                    brands = data.brands;
+                    displayBrands(data.brands);
+                }
+            } catch (error) {
+                console.error('브랜드 로드 실패:', error);
+            } finally {
+                document.getElementById('brandsLoading').style.display = 'none';
+                document.getElementById('brandsGrid').style.display = 'grid';
+            }
+        }
+        
+        // 브랜드 표시
+        function displayBrands(brands) {
+            const grid = document.getElementById('brandsGrid');
+            grid.innerHTML = '';
+            
+            brands.forEach(brand => {
+                const card = document.createElement('div');
+                card.className = 'vendor-card';
+                
+                card.innerHTML = `
+                    <h3>${brand.brand_name}</h3>
+                    <div class="vendor-info">
+                        <div class="vendor-info-row">
+                            <span class="vendor-info-label">브랜드 코드</span>
+                            <span class="vendor-info-value">${brand.brand_code}</span>
+                        </div>
+                        <div class="vendor-info-row">
+                            <span class="vendor-info-label">상태</span>
+                            <span class="vendor-info-value">${brand.use_brand === 'T' ? '활성' : '비활성'}</span>
+                        </div>
+                    </div>
+                    <div class="vendor-actions">
+                        <button class="btn btn-secondary" onclick="editBrand('${brand.brand_code}')">수정</button>
+                        <button class="btn btn-secondary" onclick="viewBrandProducts('${brand.brand_code}')">상품 보기</button>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+        
+        // 배송업체 로드
+        async function loadShippingCompanies() {
+            try {
+                const response = await fetch('/api/vendor/shipping-companies');
+                const data = await response.json();
+                
+                if (data.success) {
+                    shippingCompanies = data.shipping_companies;
+                    displayShippingCompanies(data.shipping_companies);
+                }
+            } catch (error) {
+                console.error('배송업체 로드 실패:', error);
+            }
+        }
+        
+        // 배송업체 표시
+        function displayShippingCompanies(companies) {
+            const tbody = document.getElementById('shippingTableBody');
+            tbody.innerHTML = '';
+            
+            companies.forEach(company => {
+                const row = tbody.insertRow();
+                
+                row.insertCell().textContent = company.code;
+                row.insertCell().textContent = company.name;
+                
+                const urlCell = row.insertCell();
+                urlCell.innerHTML = `<a href="${company.tracking_url}" target="_blank">${company.tracking_url}</a>`;
+                
+                row.insertCell().textContent = '활성';
+            });
+        }
+        
+        // 모달 표시
+        function showAddSupplierModal() {
+            document.getElementById('addSupplierModal').classList.add('active');
+        }
+        
+        function showAddManufacturerModal() {
+            document.getElementById('addManufacturerModal').classList.add('active');
+        }
+        
+        function showAddBrandModal() {
+            document.getElementById('addBrandModal').classList.add('active');
+        }
+        
+        // 모달 닫기
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+        
+        // 공급업체 등록
+        async function submitSupplier(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/api/vendor/suppliers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('공급업체가 등록되었습니다.');
+                    closeModal('addSupplierModal');
+                    loadSuppliers();
+                } else {
+                    alert('등록 실패: ' + result.error);
+                }
+            } catch (error) {
+                alert('등록 중 오류가 발생했습니다.');
+                console.error(error);
+            }
+        }
+        
+        // 제조사 등록
+        async function submitManufacturer(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/api/vendor/manufacturers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('제조사가 등록되었습니다.');
+                    closeModal('addManufacturerModal');
+                    loadManufacturers();
+                } else {
+                    alert('등록 실패: ' + result.error);
+                }
+            } catch (error) {
+                alert('등록 중 오류가 발생했습니다.');
+                console.error(error);
+            }
+        }
+        
+        // 브랜드 등록
+        async function submitBrand(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/api/vendor/brands', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('브랜드가 등록되었습니다.');
+                    closeModal('addBrandModal');
+                    loadBrands();
+                } else {
+                    alert('등록 실패: ' + result.error);
+                }
+            } catch (error) {
+                alert('등록 중 오류가 발생했습니다.');
+                console.error(error);
+            }
+        }
+        
+        // 공급업체 수정
+        function editSupplier(supplierCode) {
+            // TODO: 수정 모달 구현
+            alert('공급업체 수정 기능은 준비 중입니다.');
+        }
+        
+        // 공급업체 상품 보기
+        function viewSupplierProducts(supplierCode) {
+            window.location.href = `/dashboard?supplier=${supplierCode}`;
+        }
+        
+        // 제조사 수정
+        function editManufacturer(manufacturerCode) {
+            // TODO: 수정 모달 구현
+            alert('제조사 수정 기능은 준비 중입니다.');
+        }
+        
+        // 브랜드 수정
+        function editBrand(brandCode) {
+            // TODO: 수정 모달 구현
+            alert('브랜드 수정 기능은 준비 중입니다.');
+        }
+        
+        // 브랜드 상품 보기
+        function viewBrandProducts(brandCode) {
+            window.location.href = `/dashboard?brand=${brandCode}`;
+        }
+    </script>
+</body>
+</html>

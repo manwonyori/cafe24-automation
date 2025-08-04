@@ -25,6 +25,13 @@ class ProductAPI:
             self.base_url = f"https://{self.get_mall_id()}.cafe24api.com/api/v2/admin/products"
         return self.base_url
     
+    def calculate_margin(self, supply_price, selling_price):
+        """마진율 계산"""
+        if supply_price <= 0:
+            return 0
+        margin_rate = ((selling_price - supply_price) / supply_price) * 100
+        return round(margin_rate, 2)
+    
     def get_products_advanced(self):
         """고급 필터링, 정렬, 페이지네이션을 포함한 상품 목록 조회"""
         try:
@@ -122,6 +129,17 @@ class ProductAPI:
             if response.status_code == 200:
                 data = response.json()
                 products = data.get('products', [])
+                
+                # 마진율 계산 추가
+                for product in products:
+                    supply_price = float(product.get('supply_price', 0))
+                    selling_price = float(product.get('price', 0))
+                    if supply_price > 0:
+                        product['margin_rate'] = self.calculate_margin(supply_price, selling_price)
+                        product['profit'] = selling_price - supply_price
+                    else:
+                        product['margin_rate'] = 0
+                        product['profit'] = 0
                 
                 # 검색어 필터링 (API에서 직접 지원하지 않는 경우)
                 if search_keyword:
