@@ -106,20 +106,33 @@ class Cafe24APIClient:
             timeout=30
         )
         
-        # Check for token expiration
-        if response.status_code == 401:
-            self.logger.warning("401 Unauthorized, attempting token refresh...")
+        # Check for token expiration (401 or 403)
+        if response.status_code in [401, 403]:
+            self.logger.warning(f"{response.status_code} error, attempting token refresh...")
             try:
-                self.oauth_manager.refresh_access_token()
-                # Retry with new token
-                response = self.session.request(
-                    method=method,
-                    url=url,
-                    headers=self._get_headers(),
-                    json=data,
-                    params=params,
-                    timeout=30
-                )
+                # Refresh token
+                new_token = self.oauth_manager.refresh_access_token()
+                if new_token:
+                    self.logger.info("Token refreshed successfully")
+                    # Update session headers with new token
+                    self.session.headers.update(self._get_headers())
+                    
+                    # Retry with new token
+                    response = self.session.request(
+                        method=method,
+                        url=url,
+                        headers=self._get_headers(),
+                        json=data,
+                        params=params,
+                        timeout=30
+                    )
+                    
+                    # If still failing, token might be invalid
+                    if response.status_code in [401, 403]:
+                        self.logger.error("Token refresh did not resolve auth issue")
+                else:
+                    self.logger.error("Failed to obtain new token")
+                    
             except Exception as e:
                 self.logger.error(f"Token refresh failed: {e}")
                 

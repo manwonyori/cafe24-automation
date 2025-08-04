@@ -1,0 +1,253 @@
+[
+  {
+    "name": "Home Page",
+    "path": "/",
+    "method": "GET",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.99s",
+    "response": {
+      "description": "카페24 쇼핑몰 완전 자동화 시스템",
+      "endpoints": {
+        "execute": "/api/execute",
+        "health": "/health",
+        "inventory": "/api/inventory",
+        "orders": "/api/orders",
+        "products": "/api/products",
+        "report": "/api/report"
+      },
+      "examples": {
+        "execute": "POST /api/execute {\"command\": \"오늘 주문 확인\"}",
+        "inventory": "GET /api/inventory?threshold=5",
+        "products": "GET /api/products?limit=10"
+      },
+      "features": {
+        "auto_refresh": "토큰 자동 갱신",
+        "caching": "고성능 캐싱 시스템",
+        "natural_language": "한국어/영어 자연어 명령 지원",
+        "oauth": "OAuth 2.0 인증"
+      },
+      "mode": "production",
+      "name": "Cafe24 Automation System",
+      "status": "online",
+      "version": "2.0.0"
+    }
+  },
+  {
+    "name": "Health Check",
+    "path": "/health",
+    "method": "GET",
+    "status": 200,
+    "success": true,
+    "elapsed": "0.17s",
+    "response": {
+      "service": "cafe24-automation",
+      "status": "healthy",
+      "system_initialized": true,
+      "timestamp": "2025-08-04T08:42:54.876972",
+      "version": "2.0.0"
+    }
+  },
+  {
+    "name": "Products List",
+    "path": "/api/products?limit=5",
+    "method": "GET",
+    "status": 500,
+    "success": false,
+    "elapsed": "7.36s",
+    "response": {
+      "error": "403 Client Error: Forbidden for url: https://manwonyori.cafe24api.com/api/products?limit=5&offset=0",
+      "success": false
+    }
+  },
+  {
+    "name": "Products with Filter",
+    "path": "/api/products?selling=T&limit=3",
+    "method": "GET",
+    "status": 500,
+    "success": false,
+    "elapsed": "6.58s",
+    "response": {
+      "error": "403 Client Error: Forbidden for url: https://manwonyori.cafe24api.com/api/products?limit=3&offset=0&selling=T",
+      "success": false
+    }
+  },
+  {
+    "name": "Orders Today",
+    "path": "/api/orders?limit=5",
+    "method": "GET",
+    "status": 500,
+    "success": false,
+    "elapsed": "6.58s",
+    "response": {
+      "error": "403 Client Error: Forbidden for url: https://manwonyori.cafe24api.com/api/orders?limit=100&offset=0&start_date=2025-08-04&end_date=2025-08-04",
+      "success": false
+    }
+  },
+  {
+    "name": "Orders Date Range",
+    "path": "/api/orders?start_date=2025-08-04&limit=3",
+    "method": "GET",
+    "status": 500,
+    "success": false,
+    "elapsed": "6.57s",
+    "response": {
+      "error": "403 Client Error: Forbidden for url: https://manwonyori.cafe24api.com/api/orders?limit=100&offset=0&start_date=2025-08-04&end_date=2025-08-04",
+      "success": false
+    }
+  },
+  {
+    "name": "Inventory Check",
+    "path": "/api/inventory?threshold=10",
+    "method": "GET",
+    "status": 500,
+    "success": false,
+    "elapsed": "6.58s",
+    "response": {
+      "error": "403 Client Error: Forbidden for url: https://manwonyori.cafe24api.com/api/products?limit=100&offset=0",
+      "success": false
+    }
+  },
+  {
+    "name": "Low Stock Items",
+    "path": "/api/inventory?threshold=5",
+    "method": "GET",
+    "status": 500,
+    "success": false,
+    "elapsed": "6.58s",
+    "response": {
+      "error": "403 Client Error: Forbidden for url: https://manwonyori.cafe24api.com/api/products?limit=100&offset=0",
+      "success": false
+    }
+  },
+  {
+    "name": "Customers List",
+    "path": "/api/customers?limit=5",
+    "method": "GET",
+    "status": 500,
+    "success": false,
+    "elapsed": "6.59s",
+    "response": {
+      "error": "403 Client Error: Forbidden for url: https://manwonyori.cafe24api.com/api/customers?limit=5&offset=0",
+      "success": false
+    }
+  },
+  {
+    "name": "Daily Sales Stats",
+    "path": "/api/sales/statistics?period=daily",
+    "method": "GET",
+    "status": 500,
+    "success": false,
+    "elapsed": "6.59s",
+    "response": {
+      "error": "403 Client Error: Forbidden for url: https://manwonyori.cafe24api.com/api/statistics/sales?period=daily",
+      "success": false
+    }
+  },
+  {
+    "name": "Weekly Sales Stats",
+    "path": "/api/sales/statistics?period=weekly",
+    "method": "GET",
+    "status": 500,
+    "success": false,
+    "elapsed": "6.59s",
+    "response": {
+      "error": "403 Client Error: Forbidden for url: https://manwonyori.cafe24api.com/api/statistics/sales?period=weekly",
+      "success": false
+    }
+  },
+  {
+    "name": "Monthly Sales Stats",
+    "path": "/api/sales/statistics?period=monthly",
+    "method": "GET",
+    "status": 500,
+    "success": false,
+    "elapsed": "6.98s",
+    "response": {
+      "error": "403 Client Error: Forbidden for url: https://manwonyori.cafe24api.com/api/statistics/sales?period=monthly",
+      "success": false
+    }
+  },
+  {
+    "name": "Daily Report",
+    "path": "/api/report/daily",
+    "method": "GET",
+    "status": 500,
+    "success": false,
+    "elapsed": "6.59s",
+    "response": {
+      "error": "403 Client Error: Forbidden for url: https://manwonyori.cafe24api.com/api/orders?limit=100&offset=0&start_date=2025-08-04&end_date=2025-08-04",
+      "success": false
+    }
+  },
+  {
+    "name": "Inventory Report",
+    "path": "/api/report/inventory",
+    "method": "GET",
+    "status": 500,
+    "success": false,
+    "elapsed": "6.59s",
+    "response": {
+      "error": "403 Client Error: Forbidden for url: https://manwonyori.cafe24api.com/api/products?limit=100&offset=0",
+      "success": false
+    }
+  },
+  {
+    "name": "Sales Report",
+    "path": "/api/report/sales",
+    "method": "GET",
+    "status": 500,
+    "success": false,
+    "elapsed": "6.60s",
+    "response": {
+      "error": "403 Client Error: Forbidden for url: https://manwonyori.cafe24api.com/api/orders?limit=100&offset=0&start_date=2025-07-05&end_date=2025-08-04",
+      "success": false
+    }
+  },
+  {
+    "name": "NLP - Products",
+    "path": "/api/execute",
+    "method": "POST",
+    "status": 200,
+    "success": true,
+    "elapsed": "6.63s",
+    "response": {
+      "command": "show products",
+      "error": "403 Client Error: Forbidden for url: https://manwonyori.cafe24api.com/api/products?limit=100&offset=0",
+      "success": false
+    }
+  },
+  {
+    "name": "NLP - Orders",
+    "path": "/api/execute",
+    "method": "POST",
+    "status": 200,
+    "success": true,
+    "elapsed": "6.60s",
+    "response": {
+      "command": "check today orders",
+      "error": "403 Client Error: Forbidden for url: https://manwonyori.cafe24api.com/api/orders?limit=100&offset=0&start_date=2025-08-04&end_date=2025-08-04",
+      "success": false
+    }
+  },
+  {
+    "name": "NLP - Inventory",
+    "path": "/api/execute",
+    "method": "POST",
+    "status": 200,
+    "success": true,
+    "elapsed": "6.64s",
+    "response": {
+      "command": "low stock items",
+      "error": "403 Client Error: Forbidden for url: https://manwonyori.cafe24api.com/api/products?limit=100&offset=0",
+      "success": false
+    }
+  },
+  {
+    "name": "All Tests",
+    "path": "/api/test/all",
+    "method": "GET",
+    "success": false,
+    "error": "HTTPSConnectionPool(host='cafe24-automation.onrender.com', port=443): Read timed out. (read timeout=10)"
+  }
+]
