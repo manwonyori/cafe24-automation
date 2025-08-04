@@ -654,7 +654,7 @@
                 if (stockMin) params.append('stock_min', stockMin);
                 if (display) params.append('display', display);
                 
-                const response = await fetch(`/api/products/advanced?${params}`);
+                const response = await fetch(`/api/products?${params}`);
                 const data = await response.json();
                 
                 if (data.success) {
