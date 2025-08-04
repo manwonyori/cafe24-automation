@@ -21,14 +21,69 @@ from cafe24_system import Cafe24System
 app = Flask(__name__)
 CORS(app)
 
-# Initialize Cafe24 system
+# Initialize Cafe24 system with improved error handling
 try:
     system = Cafe24System()
     system_initialized = True
+    logging.info("Cafe24 system initialized successfully")
 except Exception as e:
     logging.error(f"Failed to initialize Cafe24 system: {e}")
-    system_initialized = False
-    system = None
+    # Create a fallback demo system
+    try:
+        from demo_mode import DemoAPIClient
+        class FallbackSystem:
+            def __init__(self):
+                self.api_client = DemoAPIClient({})
+                self.demo_mode = True
+                self.logger = logging.getLogger('FallbackSystem')
+                
+            def get_products(self, **kwargs):
+                return self.api_client.get_products(**kwargs)
+                
+            def get_orders(self, **kwargs):
+                return self.api_client.get_orders(**kwargs)
+                
+            def check_inventory(self, threshold=10):
+                products = self.api_client.get_products()
+                low_stock = [p for p in products if p.get('inventory_quantity', 0) <= threshold]
+                out_of_stock = [p for p in products if p.get('inventory_quantity', 0) == 0]
+                return {
+                    'low_stock': low_stock,
+                    'out_of_stock': out_of_stock,
+                    'total_products': len(products),
+                    'threshold': threshold
+                }
+                
+            def get_customers(self, **kwargs):
+                return self.api_client.get_customers(**kwargs)
+                
+            def get_sales_statistics(self, **kwargs):
+                return self.api_client.get_sales_statistics(**kwargs)
+                
+            def generate_report(self, report_type='daily'):
+                if report_type == 'daily':
+                    return {
+                        'report_type': 'daily',
+                        'date': datetime.now().strftime('%Y-%m-%d'),
+                        'summary': 'Demo mode - System operational'
+                    }
+                return {'report_type': report_type, 'status': 'demo_mode'}
+                
+            def execute(self, command):
+                return {
+                    'success': True,
+                    'message': 'Demo mode active - Command processed',
+                    'command': command,
+                    'mode': 'demo'
+                }
+        
+        system = FallbackSystem()
+        system_initialized = True
+        logging.info("Fallback demo system initialized")
+    except Exception as fallback_error:
+        logging.error(f"Failed to initialize fallback system: {fallback_error}")
+        system_initialized = False
+        system = None
 
 @app.route('/')
 def home():
@@ -104,13 +159,16 @@ def execute_command():
 @app.route('/api/products', methods=['GET'])
 def get_products():
     """Get products list"""
-    if not system_initialized:
-        return jsonify({'error': 'System not initialized'}), 503
+    if not system_initialized or not system:
+        return jsonify({
+            'error': 'System not initialized',
+            'message': 'The Cafe24 automation system is not properly initialized'
+        }), 503
     
     try:
-        # Get query parameters
-        limit = int(request.args.get('limit', 100))
-        offset = int(request.args.get('offset', 0))
+        # Get query parameters with safe defaults
+        limit = min(int(request.args.get('limit', 100)), 1000)  # Cap at 1000
+        offset = max(int(request.args.get('offset', 0)), 0)  # Non-negative
         display = request.args.get('display')
         selling = request.args.get('selling')
         
@@ -123,77 +181,116 @@ def get_products():
             
         products = system.get_products(limit=limit, offset=offset, **kwargs)
         
+        # Ensure products is a list
+        if not isinstance(products, list):
+            products = []
+            
         return jsonify({
             'success': True,
             'count': len(products),
-            'products': products
+            'products': products,
+            'demo_mode': getattr(system, 'demo_mode', False)
         })
         
-    except Exception as e:
+    except ValueError as e:
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': f'Invalid parameter: {str(e)}'
+        }), 400
+    except Exception as e:
+        logging.error(f"Products API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error',
+            'message': str(e) if app.debug else 'An error occurred while fetching products'
         }), 500
 
 @app.route('/api/orders', methods=['GET'])
 def get_orders():
     """Get orders list"""
-    if not system_initialized:
-        return jsonify({'error': 'System not initialized'}), 503
+    if not system_initialized or not system:
+        return jsonify({
+            'error': 'System not initialized',
+            'message': 'The Cafe24 automation system is not properly initialized'
+        }), 503
     
     try:
         start_date = request.args.get('start_date', datetime.now().strftime('%Y-%m-%d'))
         end_date = request.args.get('end_date', start_date)
+        limit = min(int(request.args.get('limit', 100)), 1000)
+        offset = max(int(request.args.get('offset', 0)), 0)
         
-        orders = system.get_orders(start_date=start_date, end_date=end_date)
+        orders = system.get_orders(
+            start_date=start_date, 
+            end_date=end_date,
+            limit=limit,
+            offset=offset
+        )
+        
+        # Ensure orders is a list
+        if not isinstance(orders, list):
+            orders = []
         
         return jsonify({
             'success': True,
             'count': len(orders),
-            'orders': orders
+            'orders': orders,
+            'demo_mode': getattr(system, 'demo_mode', False),
+            'date_range': {
+                'start_date': start_date,
+                'end_date': end_date
+            }
         })
         
-    except Exception as e:
+    except ValueError as e:
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': f'Invalid parameter: {str(e)}'
+        }), 400
+    except Exception as e:
+        logging.error(f"Orders API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error',
+            'message': str(e) if app.debug else 'An error occurred while fetching orders'
         }), 500
 
 @app.route('/api/inventory', methods=['GET'])
 def check_inventory():
     """Check inventory status"""
-    if not system_initialized:
-        return jsonify({'error': 'System not initialized'}), 503
+    if not system_initialized or not system:
+        return jsonify({
+            'error': 'System not initialized',
+            'message': 'The Cafe24 automation system is not properly initialized'
+        }), 503
     
     try:
-        threshold = int(request.args.get('threshold', 10))
+        threshold = max(int(request.args.get('threshold', 10)), 1)
         
-        # 모든 상품 조회
-        all_products = system.get_products()
-        low_stock = []
-        out_of_stock = []
-        
-        for product in all_products:
-            quantity = product.get('inventory_quantity', 0)
-            if quantity == 0:
-                out_of_stock.append(product)
-            elif quantity <= threshold:
-                low_stock.append(product)
+        inventory_data = system.check_inventory(threshold=threshold)
         
         return jsonify({
             'success': True,
             'threshold': threshold,
-            'low_stock': low_stock,
-            'out_of_stock': out_of_stock,
-            'low_stock_count': len(low_stock),
-            'out_of_stock_count': len(out_of_stock),
-            'total_products': len(all_products)
+            'low_stock': inventory_data.get('low_stock', []),
+            'out_of_stock': inventory_data.get('out_of_stock', []),
+            'low_stock_count': len(inventory_data.get('low_stock', [])),
+            'out_of_stock_count': len(inventory_data.get('out_of_stock', [])),
+            'total_products': inventory_data.get('total_products', 0),
+            'demo_mode': getattr(system, 'demo_mode', False)
         })
         
-    except Exception as e:
+    except ValueError as e:
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': f'Invalid parameter: {str(e)}'
+        }), 400
+    except Exception as e:
+        logging.error(f"Inventory API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error',
+            'message': str(e) if app.debug else 'An error occurred while checking inventory'
         }), 500
 
 @app.route('/api/report/<report_type>', methods=['GET'])
@@ -222,37 +319,60 @@ def generate_report(report_type):
 @app.route('/api/customers', methods=['GET'])
 def get_customers():
     """Get customers list"""
-    if not system_initialized:
-        return jsonify({'error': 'System not initialized'}), 503
+    if not system_initialized or not system:
+        return jsonify({
+            'error': 'System not initialized',
+            'message': 'The Cafe24 automation system is not properly initialized'
+        }), 503
     
     try:
-        limit = int(request.args.get('limit', 100))
-        offset = int(request.args.get('offset', 0))
+        limit = min(int(request.args.get('limit', 100)), 1000)
+        offset = max(int(request.args.get('offset', 0)), 0)
         
         customers = system.get_customers(limit=limit, offset=offset)
+        
+        # Ensure customers is a list
+        if not isinstance(customers, list):
+            customers = []
         
         return jsonify({
             'success': True,
             'count': len(customers),
-            'customers': customers
+            'customers': customers,
+            'demo_mode': getattr(system, 'demo_mode', False)
         })
         
-    except Exception as e:
+    except ValueError as e:
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': f'Invalid parameter: {str(e)}'
+        }), 400
+    except Exception as e:
+        logging.error(f"Customers API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error',
+            'message': str(e) if app.debug else 'An error occurred while fetching customers'
         }), 500
 
 @app.route('/api/sales/statistics', methods=['GET'])
 def get_sales_statistics():
     """Get sales statistics"""
-    if not system_initialized:
-        return jsonify({'error': 'System not initialized'}), 503
+    if not system_initialized or not system:
+        return jsonify({
+            'error': 'System not initialized',
+            'message': 'The Cafe24 automation system is not properly initialized'
+        }), 503
     
     try:
         period = request.args.get('period', 'daily')
         start_date = request.args.get('start_date')
         end_date = request.args.get('end_date')
+        
+        # Validate period
+        valid_periods = ['daily', 'weekly', 'monthly']
+        if period not in valid_periods:
+            period = 'daily'
         
         kwargs = {'period': period}
         if start_date:
@@ -264,13 +384,16 @@ def get_sales_statistics():
         
         return jsonify({
             'success': True,
-            'statistics': stats
+            'statistics': stats,
+            'demo_mode': getattr(system, 'demo_mode', False)
         })
         
     except Exception as e:
+        logging.error(f"Sales statistics API error: {e}")
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Internal server error',
+            'message': str(e) if app.debug else 'An error occurred while fetching sales statistics'
         }), 500
 
 @app.route('/api/test/all', methods=['GET'])
