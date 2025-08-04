@@ -1,88 +1,100 @@
-# Render 환경 변수 설정 가이드
+# Render 환경변수 즉시 설정 가이드
 
-## 🔐 필수 환경 변수
+## 🚀 빠른 설정 (5분 소요)
 
-Render 대시보드에서 다음 환경 변수를 설정해야 합니다:
+### 1단계: 환경변수 복사
+아래 내용을 **전체 복사**하세요:
 
-### 1. 카페24 API 기본 정보
 ```
-CAFE24_MALL_ID = [실제 몰 ID]  # 예: myshop
-CAFE24_CLIENT_ID = [앱 클라이언트 ID]  # 카페24 앱에서 발급
-CAFE24_CLIENT_SECRET = [앱 시크릿 키]  # 카페24 앱에서 발급
-```
-
-### 2. OAuth 토큰 (선택사항)
-```
-CAFE24_ACCESS_TOKEN = [액세스 토큰]  # OAuth 인증 후 발급
-CAFE24_REFRESH_TOKEN = [리프레시 토큰]  # OAuth 인증 후 발급
+CAFE24_MALL_ID=manwonyori
+CAFE24_CLIENT_ID=9bPpABwHB5mtkCEAfIeuNK
+CAFE24_CLIENT_SECRET=qtnWtUk2OZzua1SRa7gN3A
+CAFE24_REDIRECT_URI=https://cafe24-automation.onrender.com/callback
+CAFE24_ACCESS_TOKEN=sRPbNFyOBdNts1UI7EerpB
+CAFE24_REFRESH_TOKEN=KU6XvhF5H9Ypf6NsIfZPeK
 ```
 
-## 📋 카페24 API 정보 확인 방법
+### 2단계: Render 대시보드 접속
+1. https://dashboard.render.com 로그인
+2. Services 탭에서 `cafe24-automation` 클릭
 
-1. **카페24 어드민 접속**
-   - https://[몰ID].cafe24.com/admin 로그인
+### 3단계: 환경변수 설정
+1. **Environment** 탭 클릭
+2. 환경변수 입력 필드에 위에서 복사한 내용을 **붙여넣기**
+3. **Save Changes** 버튼 클릭 (우측 상단의 보라색 버튼)
 
-2. **앱스토어 → 개발자센터**
-   - 상단 메뉴에서 "앱스토어" 클릭
-   - "개발자센터" 선택
+### 4단계: 재배포
+1. **Manual Deploy** 버튼 클릭 (우측 상단)
+2. **Deploy latest commit** 선택
+3. 배포 시작 확인 (2-5분 소요)
 
-3. **앱 생성 또는 확인**
-   - "앱 만들기" 또는 기존 앱 선택
-   - API 권한 설정:
-     - ✅ 상품 읽기/쓰기
-     - ✅ 주문 읽기/쓰기
-     - ✅ 고객 읽기
-     - ✅ 재고 읽기/쓰기
+### 5단계: Production 모드 확인
+배포 완료 후 브라우저로 접속:
+https://cafe24-automation.onrender.com/
 
-4. **API 정보 복사**
-   - Client ID 복사
-   - Client Secret 복사
-   - Mall ID는 카페24 도메인의 서브도메인 부분
+대시보드 상단에 **"시스템 모드: production"** 표시 확인
 
-## 🚀 Render에서 환경 변수 설정
+## ✅ 설정 완료 후 확인사항
 
-1. **Render 대시보드 접속**
-   - https://dashboard.render.com
+### API로 확인
+```bash
+curl https://cafe24-automation.onrender.com/
+```
 
-2. **서비스 선택**
-   - cafe24-automation 서비스 클릭
+응답:
+```json
+{
+  "mode": "production",  // ← 이것이 표시되면 성공!
+  "status": "online"
+}
+```
 
-3. **Environment 탭**
-   - "Environment" 탭 클릭
-   - "Add Environment Variable" 클릭
+### 브라우저로 확인
+1. https://cafe24-automation.onrender.com/ 접속
+2. 대시보드에서 실제 데이터 표시 확인
+3. 자연어 명령 테스트: "상품 목록 보여줘"
 
-4. **변수 추가**
-   ```
-   Key: CAFE24_MALL_ID
-   Value: [실제 몰 ID]
-   
-   Key: CAFE24_CLIENT_ID  
-   Value: [실제 클라이언트 ID]
-   
-   Key: CAFE24_CLIENT_SECRET
-   Value: [실제 시크릿 키]
-   ```
+## 🔍 문제 해결
 
-5. **Save Changes**
-   - 모든 변수 입력 후 "Save Changes" 클릭
-   - 서비스가 자동으로 재시작됩니다
+### "여전히 Demo 모드입니다"
+1. Environment 탭에서 환경변수가 모두 입력되었는지 확인
+2. Save Changes를 클릭했는지 확인
+3. Manual Deploy를 실행했는지 확인
+4. 5분 정도 기다린 후 재확인
 
-## 🎭 데모 모드
+### "503 Service Unavailable"
+- 정상입니다! 배포 중이므로 5분 정도 기다려주세요
+- https://dashboard.render.com 에서 배포 진행상황 확인 가능
 
-환경 변수가 설정되지 않으면 자동으로 데모 모드로 작동합니다:
-- 실제 API 호출 없이 샘플 데이터 반환
-- 기능 테스트 및 데모용
-- 실제 운영 시에는 반드시 API 정보 설정 필요
+### "토큰이 만료되었습니다"
+- 시스템이 자동으로 토큰을 갱신합니다
+- 문제가 지속되면 새 토큰 발급 필요
 
-## ✅ 설정 확인
+## 🎯 자동화 스크립트 사용
 
-환경 변수 설정 후:
-1. https://[your-app].onrender.com/health 접속
-2. "system_initialized": true 확인
-3. https://[your-app].onrender.com/api/products 테스트
+Python이 설치되어 있다면:
+```bash
+cd cafe24
+python copy_env_vars.py
+```
 
-## ⚠️ 주의사항
+이 명령으로 `render_env_vars.txt` 파일이 생성되며, 
+이 파일의 내용을 복사해서 사용할 수도 있습니다.
 
-- Client Secret은 절대 공개하지 마세요
-- 환경 변수는 암호화되어 저장됩니다
-- 변경 시 서비스가 자동 재시작됩니다
+## 📱 모바일에서 설정하기
+
+1. Render 모바일 웹 접속 (앱 불필요)
+2. 로그인 후 cafe24-automation 서비스 선택
+3. Environment 탭에서 환경변수 입력
+4. Save Changes → Deploy
+
+## 🎉 완료!
+
+환경변수 설정이 완료되면:
+- **Demo Mode** → **Production Mode** 전환
+- 실제 Cafe24 쇼핑몰 데이터 연동
+- 모든 API 기능 활성화
+
+---
+생성일: 2025-08-04
+자동 생성 도구: `python copy_env_vars.py`
