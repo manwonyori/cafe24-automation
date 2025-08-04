@@ -214,15 +214,32 @@ def get_categories():
 
 def get_mall_id():
     """mall_id 가져오기"""
-    token_path = 'oauth_token.json'
-    with open(token_path, 'r', encoding='utf-8') as f:
-        token_data = json.load(f)
-    return token_data.get('mall_id')
+    # 환경변수에서 먼저 시도
+    mall_id = os.environ.get('CAFE24_MALL_ID')
+    if mall_id:
+        return mall_id
+    
+    # 파일에서 시도
+    try:
+        token_path = 'oauth_token.json'
+        with open(token_path, 'r', encoding='utf-8') as f:
+            token_data = json.load(f)
+        return token_data.get('mall_id')
+    except:
+        return 'manwonyori'
 
 def get_headers():
     """API 헤더 가져오기 (자동 토큰 갱신 포함)"""
-    # 자동 갱신된 토큰 사용
-    access_token = token_manager.get_valid_token()
+    # 환경변수에서 토큰 먼저 시도
+    access_token = os.environ.get('CAFE24_ACCESS_TOKEN')
+    
+    # 토큰 매니저에서 시도
+    if not access_token:
+        try:
+            access_token = token_manager.get_valid_token()
+        except:
+            pass
+    
     if not access_token:
         raise Exception("유효한 토큰을 가져올 수 없습니다")
     
