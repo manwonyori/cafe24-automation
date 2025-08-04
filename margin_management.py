@@ -19,11 +19,18 @@ class MarginManager:
         self.get_mall_id = get_mall_id
     
     def calculate_margin(self, supply_price, selling_price):
-        """마진율 계산"""
-        if supply_price <= 0:
+        """마진율 계산 - 개선된 버전"""
+        try:
+            supply_price = float(supply_price) if supply_price else 0
+            selling_price = float(selling_price) if selling_price else 0
+            
+            if supply_price <= 0 or selling_price <= 0:
+                return 0
+                
+            margin_rate = ((selling_price - supply_price) / supply_price) * 100
+            return round(margin_rate, 2)
+        except (ValueError, TypeError, ZeroDivisionError):
             return 0
-        margin_rate = ((selling_price - supply_price) / supply_price) * 100
-        return round(margin_rate, 2)
     
     def get_margin_analysis(self):
         """전체 상품의 마진율 분석"""
@@ -41,7 +48,7 @@ class MarginManager:
                 params = {
                     'limit': limit,
                     'offset': offset,
-                    'fields': 'product_no,product_code,product_name,price,supply_price,retail_price,quantity,display,selling'
+                    'fields': 'product_no,product_code,product_name,price,supply_price,retail_price,quantity,display,selling,cost_price,purchase_price'
                 }
                 
                 response = requests.get(url, headers=headers, params=params)
@@ -75,8 +82,16 @@ class MarginManager:
             for product in all_products:
                 try:
                     selling_price = float(product.get('price', 0))
-                    supply_price = float(product.get('supply_price', 0))
+                    # 다양한 공급가 필드명 시도
+                    supply_price = float(product.get('supply_price') or 
+                                       product.get('cost_price') or 
+                                       product.get('purchase_price') or 
+                                       product.get('wholesale_price') or 0)
                     quantity = int(product.get('quantity', 0))
+                    
+                    # 디버그: 공급가 필드 확인
+                    if supply_price == 0:
+                        print(f"Debug: Product {product.get('product_no')} - No supply price found. Available fields: {list(product.keys())}")
                     
                     if supply_price > 0:
                         margin_rate = self.calculate_margin(supply_price, selling_price)
@@ -135,8 +150,15 @@ class MarginManager:
                 'success': True,
                 'total_products': len(all_products),
                 'margin_calculated_products': margin_calculated_count,
+                'products_without_supply_price': len(all_products) - margin_calculated_count,
                 'average_margin_rate': round(avg_margin, 2),
                 'margin_ranges': margin_ranges,
+                'debug_info': {
+                    'supply_price_fields_found': len([p for p in all_products if p.get('supply_price')]),
+                    'cost_price_fields_found': len([p for p in all_products if p.get('cost_price')]),
+                    'purchase_price_fields_found': len([p for p in all_products if p.get('purchase_price')]),
+                    'sample_product_fields': list(all_products[0].keys()) if all_products else []
+                },
                 'generated_at': datetime.now().isoformat()
             })
             
@@ -178,7 +200,10 @@ class MarginManager:
                     
                     product_data = response.json().get('product', {})
                     current_selling_price = float(product_data.get('price', 0))
-                    current_supply_price = float(product_data.get('supply_price', 0))
+                    # 다양한 공급가 필드명 시도
+                    current_supply_price = float(product_data.get('supply_price') or 
+                                                product_data.get('cost_price') or 
+                                                product_data.get('purchase_price') or 0)
                     
                     if current_supply_price <= 0:
                         results.append({
@@ -269,7 +294,7 @@ class MarginManager:
             url = f"https://{mall_id}.cafe24api.com/api/v2/admin/products"
             params = {
                 'limit': 100,
-                'fields': 'product_no,product_code,product_name,price,supply_price,quantity,display'
+                'fields': 'product_no,product_code,product_name,price,supply_price,cost_price,purchase_price,quantity,display'
             }
             
             response = requests.get(url, headers=headers, params=params)
@@ -281,16 +306,26 @@ class MarginManager:
                 # 마진율 필터링
                 filtered_products = []
                 for product in products:
-                    supply_price = float(product.get('supply_price', 0))
+                    # 다양한 공급가 필드명 시도
+                    supply_price = float(product.get('supply_price') or 
+                                       product.get('cost_price') or 
+                                       product.get('purchase_price') or 0)
                     selling_price = float(product.get('price', 0))
                     
-                    if supply_price > 0:
+                    if supply_price > 0 and selling_price > 0:
                         margin_rate = self.calculate_margin(supply_price, selling_price)
                         
                         if (min_margin is None or margin_rate >= min_margin) and \
                            (max_margin is None or margin_rate <= max_margin):
                             product['margin_rate'] = margin_rate
                             product['profit'] = selling_price - supply_price
+                            filtered_products.append(product)
+                    else:
+                        # 공급가가 0이거나 누락된 경우도 포함 (마진율 0으로 표시)
+                        if min_margin is None or 0 >= min_margin:
+                            product['margin_rate'] = 0
+                            product['profit'] = 0
+                            product['supply_price_missing'] = True
                             filtered_products.append(product)
                 
                 # 마진율 기준 정렬

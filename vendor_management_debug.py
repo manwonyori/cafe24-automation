@@ -25,11 +25,21 @@ class VendorManager:
             print(f"Debug: Mall ID = {mall_id}")
             print(f"Debug: Headers = {headers}")
             
+            # 디버그: 실제 응답 확인을 위한 테스트 호출
+            test_url = f"https://{mall_id}.cafe24api.com/api/v2/admin/products"
+            test_params = {'limit': 1, 'fields': 'product_no,product_name'}
+            test_response = requests.get(test_url, headers=headers, params=test_params)
+            print(f"Debug: Test API Response Status = {test_response.status_code}")
+            if test_response.status_code == 200:
+                test_data = test_response.json()
+                if 'products' in test_data and test_data['products']:
+                    print(f"Debug: Available fields in product = {list(test_data['products'][0].keys())}")
+            
             # 먼저 상품에서 공급업체 정보 추출 시도
             products_url = f"https://{mall_id}.cafe24api.com/api/v2/admin/products"
             params = {
                 'limit': 100,
-                'fields': 'product_no,product_name,supplier_code,supplier_name'
+                'fields': 'product_no,product_name,supplier_code,supplier_name,supplier_product_code,origin_classification,manufacturer_code,manufacturer_name,brand_code,brand_name'
             }
             
             response = requests.get(products_url, headers=headers, params=params)
@@ -41,41 +51,121 @@ class VendorManager:
                 data = response.json()
                 products = data.get('products', [])
                 
-                # 상품에서 공급업체 정보 추출
+                # 상품에서 공급업체 정보 추출 (다양한 필드명 시도)
                 for product in products:
-                    supplier_code = product.get('supplier_code')
-                    supplier_name = product.get('supplier_name', '')
+                    # 공급업체 정보 추출 - 여러 필드명 시도
+                    supplier_code = (product.get('supplier_code') or 
+                                   product.get('vendor_code') or 
+                                   product.get('supplier_id'))
+                    supplier_name = (product.get('supplier_name') or 
+                                   product.get('vendor_name') or 
+                                   product.get('supplier_company_name', ''))
                     
+                    # 제조사 정보도 수집
+                    manufacturer_code = product.get('manufacturer_code')
+                    manufacturer_name = product.get('manufacturer_name', '')
+                    
+                    # 브랜드 정보도 수집  
+                    brand_code = product.get('brand_code')
+                    brand_name = product.get('brand_name', '')
+                    
+                    # 공급업체 코드가 있으면 추가
                     if supplier_code and supplier_code not in suppliers_dict:
                         suppliers_dict[supplier_code] = {
                             'supplier_code': supplier_code,
                             'supplier_name': supplier_name or f'공급업체 {supplier_code}',
                             'product_count': 0,
-                            'use_supplier': 'T'
+                            'use_supplier': 'T',
+                            'supplier_type': 'supplier'
                         }
                     
-                    if supplier_code:
-                        suppliers_dict[supplier_code]['product_count'] += 1
-            
-            # 실제 공급업체 API 시도 (있을 경우)
-            try:
-                suppliers_url = f"https://{mall_id}.cafe24api.com/api/v2/admin/suppliers"
-                suppliers_response = requests.get(suppliers_url, headers=headers, params={'limit': 100})
-                print(f"Debug: Suppliers API Response Status = {suppliers_response.status_code}")
-                
-                if suppliers_response.status_code == 200:
-                    suppliers_data = suppliers_response.json()
-                    api_suppliers = suppliers_data.get('suppliers', [])
+                    # 제조사 코드를 공급업체로 추가 (제조사가 있지만 공급업체가 없는 경우)
+                    if manufacturer_code and not supplier_code and manufacturer_code not in suppliers_dict:
+                        suppliers_dict[manufacturer_code] = {
+                            'supplier_code': manufacturer_code,
+                            'supplier_name': manufacturer_name or f'제조사 {manufacturer_code}',
+                            'product_count': 0,
+                            'use_supplier': 'T',
+                            'supplier_type': 'manufacturer'
+                        }
                     
-                    # API 공급업체 정보로 업데이트
-                    for supplier in api_suppliers:
-                        code = supplier.get('supplier_code')
-                        if code in suppliers_dict:
-                            suppliers_dict[code].update(supplier)
-                        else:
-                            suppliers_dict[code] = supplier
-                            suppliers_dict[code]['product_count'] = 0
+                    # 브랜드 코드를 공급업체로 추가 (브랜드가 있지만 공급업체/제조사가 없는 경우)
+                    if brand_code and not supplier_code and not manufacturer_code and brand_code not in suppliers_dict:
+                        suppliers_dict[brand_code] = {
+                            'supplier_code': brand_code,
+                            'supplier_name': brand_name or f'브랜드 {brand_code}',
+                            'product_count': 0,
+                            'use_supplier': 'T',
+                            'supplier_type': 'brand'
+                        }
+                    
+                    # 카운트 증가
+                    if supplier_code and supplier_code in suppliers_dict:
+                        suppliers_dict[supplier_code]['product_count'] += 1
+                    elif manufacturer_code and manufacturer_code in suppliers_dict:
+                        suppliers_dict[manufacturer_code]['product_count'] += 1
+                    elif brand_code and brand_code in suppliers_dict:
+                        suppliers_dict[brand_code]['product_count'] += 1
+            
+            # 실제 공급업체 API 시도 (다양한 엔드포인트 시도)
+            try:
+                # 여러 가능한 공급업체 API 엔드포인트 시도
+                supplier_endpoints = [
+                    f"https://{mall_id}.cafe24api.com/api/v2/admin/suppliers",
+                    f"https://{mall_id}.cafe24api.com/api/v2/admin/vendors",
+                    f"https://{mall_id}.cafe24api.com/api/v2/admin/product/suppliers"
+                ]
+                
+                for endpoint in supplier_endpoints:
+                    try:
+                        suppliers_response = requests.get(endpoint, headers=headers, params={'limit': 100})
+                        print(f"Debug: Testing {endpoint} - Status = {suppliers_response.status_code}")
+                        
+                        if suppliers_response.status_code == 200:
+                            suppliers_data = suppliers_response.json()
+                            print(f"Debug: API Response keys = {list(suppliers_data.keys())}")
                             
+                            # 다양한 응답 구조 시도
+                            api_suppliers = (suppliers_data.get('suppliers', []) or 
+                                           suppliers_data.get('vendors', []) or 
+                                           suppliers_data.get('data', []))
+                            
+                            if api_suppliers:
+                                print(f"Debug: Found {len(api_suppliers)} suppliers from API")
+                                print(f"Debug: First supplier structure = {api_suppliers[0] if api_suppliers else 'None'}")
+                                
+                                # API 공급업체 정보로 업데이트
+                                for supplier in api_suppliers:
+                                    code = (supplier.get('supplier_code') or 
+                                           supplier.get('vendor_code') or 
+                                           supplier.get('code'))
+                                    name = (supplier.get('supplier_name') or 
+                                           supplier.get('vendor_name') or 
+                                           supplier.get('name'))
+                                    
+                                    if code:
+                                        if code in suppliers_dict:
+                                            suppliers_dict[code].update(supplier)
+                                        else:
+                                            supplier_info = {
+                                                'supplier_code': code,
+                                                'supplier_name': name or f'공급업체 {code}',
+                                                'product_count': 0,
+                                                'use_supplier': supplier.get('use_supplier', 'T'),
+                                                'supplier_type': 'api_supplier'
+                                            }
+                                            # 추가 정보가 있으면 포함
+                                            if supplier.get('supplier_manager_name'):
+                                                supplier_info['supplier_manager_name'] = supplier.get('supplier_manager_name')
+                                            if supplier.get('representative_name'):
+                                                supplier_info['representative_name'] = supplier.get('representative_name')
+                                            
+                                            suppliers_dict[code] = supplier_info
+                                break
+                    except Exception as endpoint_error:
+                        print(f"Debug: Endpoint {endpoint} failed = {str(endpoint_error)}")
+                        continue
+                        
             except Exception as e:
                 print(f"Debug: Suppliers API Error = {str(e)}")
                 # 공급업체 API가 없어도 계속 진행
@@ -83,14 +173,28 @@ class VendorManager:
             # 결과 변환
             suppliers = list(suppliers_dict.values())
             
-            # 공급업체가 없으면 샘플 데이터 제공
-            if not suppliers:
+            # 공급업체가 없으면 상품별로 기본 공급업체 생성
+            if not suppliers and 'products' in locals():
+                # 상품이 있지만 공급업체 정보가 없는 경우, 상품별로 기본 공급업체 생성
+                for i, product in enumerate(products[:5]):  # 최대 5개까지만
+                    supplier_code = f'DEFAULT_{i+1:03d}'
+                    suppliers.append({
+                        'supplier_code': supplier_code,
+                        'supplier_name': f'기본공급처 {i+1}',
+                        'product_count': 1,
+                        'use_supplier': 'T',
+                        'supplier_type': 'default',
+                        'related_product': product.get('product_name', '')
+                    })
+            elif not suppliers:
+                # 상품도 없는 경우 기본 샘플 데이터
                 suppliers = [
                     {
                         'supplier_code': 'S000000A',
                         'supplier_name': '기본 공급업체',
                         'product_count': 0,
                         'use_supplier': 'T',
+                        'supplier_type': 'sample',
                         'supplier_manager_name': '담당자',
                         'supplier_manager_phone': '010-0000-0000'
                     }
@@ -101,8 +205,11 @@ class VendorManager:
                 'suppliers': suppliers,
                 'count': len(suppliers),
                 'debug_info': {
-                    'extracted_from_products': len(suppliers_dict) > 0,
-                    'total_products_checked': len(products) if 'products' in locals() else 0
+                    'extracted_from_products': len([s for s in suppliers_dict.values() if s.get('supplier_type') != 'api_supplier']) > 0,
+                    'extracted_from_api': len([s for s in suppliers_dict.values() if s.get('supplier_type') == 'api_supplier']) > 0,
+                    'total_products_checked': len(products) if 'products' in locals() else 0,
+                    'supplier_types': list(set(s.get('supplier_type', 'unknown') for s in suppliers_dict.values())),
+                    'api_fields_found': list(products[0].keys()) if 'products' in locals() and products else []
                 }
             })
             
