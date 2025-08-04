@@ -21,7 +21,7 @@ def load_cafe24_config() -> Dict:
     
     for path in config_paths:
         if os.path.exists(path):
-            print(f"✅ Found config at: {path}")
+            print(f"[OK] Found config at: {path}")
             with open(path, 'r', encoding='utf-8') as f:
                 return json.load(f)
                 
@@ -33,12 +33,12 @@ def check_gh_cli():
     try:
         result = subprocess.run(['gh', '--version'], capture_output=True, text=True)
         if result.returncode == 0:
-            print("✅ GitHub CLI is installed")
+            print("[OK] GitHub CLI is installed")
             return True
     except FileNotFoundError:
         pass
         
-    print("❌ GitHub CLI not found")
+    print("[ERROR] GitHub CLI not found")
     print("\nInstall GitHub CLI:")
     print("  Windows: winget install --id GitHub.cli")
     print("  Mac: brew install gh")
@@ -50,10 +50,10 @@ def check_gh_auth():
     """Check if GitHub CLI is authenticated"""
     result = subprocess.run(['gh', 'auth', 'status'], capture_output=True, text=True)
     if result.returncode == 0:
-        print("✅ GitHub CLI is authenticated")
+        print("[OK] GitHub CLI is authenticated")
         return True
         
-    print("❌ GitHub CLI not authenticated")
+    print("[ERROR] GitHub CLI not authenticated")
     print("\nRun: gh auth login")
     return False
 
@@ -74,20 +74,20 @@ def set_github_secret(name: str, value: str, repo: str = None):
         )
         
         if result.returncode == 0:
-            print(f"✅ Set secret: {name}")
+            print(f"[OK] Set secret: {name}")
             return True
         else:
-            print(f"❌ Failed to set {name}: {result.stderr}")
+            print(f"[ERROR] Failed to set {name}: {result.stderr}")
             return False
             
     except Exception as e:
-        print(f"❌ Error setting {name}: {e}")
+        print(f"[ERROR] Error setting {name}: {e}")
         return False
 
 
 def get_render_deploy_hook():
     """Get Render deploy hook URL"""
-    print("\n📌 Render Deploy Hook URL 설정")
+    print("\n[INFO] Render Deploy Hook URL 설정")
     print("1. https://dashboard.render.com 접속")
     print("2. cafe24-automation 서비스 선택")
     print("3. Settings 탭 → Deploy Hook")
@@ -99,7 +99,7 @@ def get_render_deploy_hook():
 
 def get_render_api_key():
     """Get Render API key"""
-    print("\n🔑 Render API Key 설정")
+    print("\n[INFO] Render API Key 설정")
     print("1. https://dashboard.render.com 접속")
     print("2. Account Settings → API Keys")
     print("3. Create API Key")
@@ -109,7 +109,7 @@ def get_render_api_key():
 
 
 def main():
-    print("🚀 GitHub Secrets 자동 설정")
+    print("[SETUP] GitHub Secrets 자동 설정")
     print("=" * 60)
     
     # Check prerequisites
@@ -127,19 +127,19 @@ def main():
     )
     
     if result.returncode != 0:
-        print("❌ Not in a GitHub repository")
+        print("[ERROR] Not in a GitHub repository")
         return
         
     repo_info = json.loads(result.stdout)
     repo = repo_info['nameWithOwner']
-    print(f"\n📦 Repository: {repo}")
+    print(f"\n[REPO] Repository: {repo}")
     
     # Load Cafe24 config
-    print("\n🔍 Loading Cafe24 configuration...")
+    print("\n[LOAD] Loading Cafe24 configuration...")
     try:
         config = load_cafe24_config()
     except FileNotFoundError:
-        print("❌ Config file not found")
+        print("[ERROR] Config file not found")
         return
         
     # Prepare secrets
@@ -161,7 +161,7 @@ def main():
         secrets["RENDER_API_KEY"] = render_api_key
         
     # Set secrets
-    print("\n📝 Setting GitHub Secrets...")
+    print("\n[SETUP] Setting GitHub Secrets...")
     success_count = 0
     
     for name, value in secrets.items():
@@ -169,13 +169,13 @@ def main():
             if set_github_secret(name, value, repo):
                 success_count += 1
         else:
-            print(f"⚠️  Skipped {name} (no value)")
+            print(f"[SKIP] Skipped {name} (no value)")
             
-    print(f"\n✅ Set {success_count}/{len(secrets)} secrets")
+    print(f"\n[DONE] Set {success_count}/{len(secrets)} secrets")
     
     # Create workflow trigger
     if success_count > 0:
-        print("\n🎯 Next steps:")
+        print("\n[NEXT] Next steps:")
         print("1. Commit and push the workflow files:")
         print("   git add .github/")
         print("   git commit -m 'Add GitHub Actions automation'")
@@ -184,10 +184,10 @@ def main():
         print("3. Check Actions tab on GitHub for progress")
         
         # Generate manual command
-        print("\n📋 Or trigger manually:")
+        print("\n[TIP] Or trigger manually:")
         print("   gh workflow run auto-deploy.yml")
         
-    print("\n✨ Done!")
+    print("\n[COMPLETE] Done!")
 
 
 if __name__ == "__main__":
