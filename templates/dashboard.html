@@ -411,12 +411,8 @@
         <!-- 빠른 필터 버튼 -->
         <div class="quick-filters-section">
             <h3>🎯 빠른 필터</h3>
-            <div class="quick-filter-buttons">
-                <button class="btn btn-secondary" onclick="filterByCategory('[인생]')">인생</button>
-                <button class="btn btn-secondary" onclick="filterByCategory('[부산]')">부산</button>
-                <button class="btn btn-secondary" onclick="filterByCategory('[식품]')">식품</button>
-                <button class="btn btn-secondary" onclick="filterByCategory('[음료]')">음료</button>
-                <button class="btn btn-secondary" onclick="filterByCategory('[생활]')">생활</button>
+            <div class="quick-filter-buttons" id="categoryButtons">
+                <!-- 카테고리 버튼은 동적으로 생성됩니다 -->
                 <button class="btn btn-danger" onclick="showOutOfStock()">품절 상품</button>
                 <button class="btn btn-warning" onclick="showLowStock()">재고 부족</button>
                 <button class="btn btn-primary" onclick="resetFilters()">전체 보기</button>
@@ -677,14 +673,24 @@
             const tbody = document.getElementById('productsBody');
             tbody.innerHTML = '';
             
+            // 카테고리 추출
+            const categories = new Set();
+            
             products.forEach(product => {
                 const row = tbody.insertRow();
+                
+                // 상품명에서 카테고리 추출
+                const productName = product.product_name;
+                const categoryMatch = productName.match(/\[([^\]]+)\]/);
+                if (categoryMatch) {
+                    categories.add(categoryMatch[1]);
+                }
                 
                 // 상품코드
                 row.insertCell().textContent = product.product_code || '-';
                 
                 // 상품명
-                row.insertCell().textContent = product.product_name;
+                row.insertCell().textContent = productName;
                 
                 // 가격
                 row.insertCell().textContent = '₩' + parseInt(product.price).toLocaleString();
@@ -714,6 +720,9 @@
                 row.insertCell().textContent = product.created_date ? 
                     new Date(product.created_date).toLocaleDateString() : '-';
             });
+            
+            // 카테고리 버튼 업데이트
+            updateCategoryButtons(Array.from(categories));
         }
         
         // 통계 업데이트
@@ -807,6 +816,26 @@
             }
         }
         
+        // 카테고리 버튼 업데이트
+        function updateCategoryButtons(categories) {
+            const buttonContainer = document.getElementById('categoryButtons');
+            
+            // 기존 카테고리 버튼 제거 (품절, 재고부족, 전체보기 버튼은 유지)
+            const existingButtons = buttonContainer.querySelectorAll('.btn-category');
+            existingButtons.forEach(btn => btn.remove());
+            
+            // 새 카테고리 버튼 추가
+            categories.sort().forEach(category => {
+                const button = document.createElement('button');
+                button.className = 'btn btn-secondary btn-category';
+                button.textContent = category;
+                button.onclick = () => filterByCategory(`[${category}]`);
+                
+                // 첫 번째 버튼 앞에 삽입
+                buttonContainer.insertBefore(button, buttonContainer.firstChild);
+            });
+        }
+        
         // 카테고리별 필터
         async function filterByCategory(category) {
             currentOffset = 0;
@@ -842,6 +871,7 @@
             document.getElementById('priceMin').value = '';
             document.getElementById('priceMax').value = '';
             document.getElementById('stockMin').value = '';
+            document.getElementById('stockMax').value = '';
             document.getElementById('displayFilter').value = '';
             document.getElementById('sortBy').value = 'created_date';
             document.getElementById('searchInput').value = '';
