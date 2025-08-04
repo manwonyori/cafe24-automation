@@ -16,6 +16,8 @@ class NLPProcessor:
                 'patterns': [
                     r'상품\s*(목록|리스트)?',
                     r'(모든|전체)\s*상품',
+                    r'판매\s*가능한?\s*(제품|상품)',
+                    r'제품\s*(목록|리스트)?',
                     r'products?\s*list?',
                     r'show\s*(all)?\s*products?'
                 ],

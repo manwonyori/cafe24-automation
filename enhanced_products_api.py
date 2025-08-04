@@ -45,38 +45,21 @@ class ProductAPI:
             # 2. 필드 선택 (성능 최적화)
             fields = request.args.get('fields')
             if not fields:
-                # 기본 필드셋 - 모든 주요 필드 포함
+                # 기본 필드셋 - 필수 필드만 포함 (422 오류 방지)
                 fields = ','.join([
-                    'product_no', 'product_code', 'custom_product_code',
-                    'product_name', 'eng_product_name', 'model_name',
-                    'price', 'retail_price', 'supply_price',
-                    'display', 'selling', 'product_condition',
-                    'product_used_month', 'summary_description', 'simple_description',
-                    'product_tag', 'use_naverpay', 'naverpay_type',
-                    'quantity', 'tax_type', 'tax_rate',
-                    'price_content', 'buy_limit_by_product',
-                    'buy_limit_type', 'buy_unit_type', 'buy_unit',
-                    'order_quantity_limit_type', 'minimum_quantity', 'maximum_quantity',
-                    'points_by_product', 'points_setting_by_product',
-                    'points_amount', 'except_member_points',
-                    'adult_certification', 'detail_image', 'list_image',
-                    'tiny_image', 'small_image', 'has_option',
-                    'option_type', 'manufacturer_code', 'supplier_code',
-                    'brand_code', 'trend_code', 'product_weight',
-                    'expiration_date', 'expiration_date_start', 'expiration_date_end',
-                    'exposure_priority', 'exposure_limit_type',
-                    'exposure_limit_start_date', 'exposure_limit_end_date',
-                    'relative_product_name', 'shipping_fee_by_product',
-                    'shipping_method', 'shipping_period',
-                    'shipping_scope', 'shipping_area', 'shipping_fee_type',
-                    'shipping_rates', 'updated_date', 'created_date',
-                    'english_product_material', 'product_material',
-                    'cloth_fabric', 'made_in_code', 'additional_information',
-                    'show_purchase_list', 'related_product', 'product_category',
-                    'repurchase_restriction', 'single_purchase_restriction',
-                    'buy_member_id_limit', 'buy_ip_limit',
-                    'buy_limit_period', 'buy_limit_look_period',
-                    'buy_limit_by_first_purchase', 'buy_limit_by_age'
+                    'product_no', 
+                    'product_code',
+                    'product_name',
+                    'price',
+                    'quantity',
+                    'display',
+                    'selling',
+                    'created_date',
+                    'updated_date',
+                    'list_image',
+                    'brand_code',
+                    'supply_price',
+                    'retail_price'
                 ])
             params['fields'] = fields
             

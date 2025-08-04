@@ -76,7 +76,8 @@ def process_command():
         
         # 명령 실행
         if result['action'] == 'list_products':
-            return get_products()
+            # 직접 고급 API 호출
+            return product_api.get_products_advanced()
         elif result['action'] == 'list_orders':
             return get_today_orders()
         elif result['action'] == 'check_inventory':
