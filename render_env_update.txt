@@ -1,0 +1,12 @@
+CAFE24_ACCESS_TOKEN=CrtjgM8pGZumOCywnap5cA
+CAFE24_REFRESH_TOKEN=C3lHi4evT6vO9QE3fdefXI
+
+위의 환경변수를 Render 대시보드에서 업데이트해야 합니다:
+
+1. https://dashboard.render.com/web/srv-d27vit95pdvs7381g3eg/env 접속
+2. CAFE24_ACCESS_TOKEN 값을 새 토큰으로 업데이트
+3. CAFE24_REFRESH_TOKEN 값도 함께 업데이트  
+4. "Save Changes" 클릭
+5. 자동으로 재배포됩니다
+
+현재 토큰 유효기간: 2025-08-05 14:31:33 (약 2시간)
