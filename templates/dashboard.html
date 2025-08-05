@@ -574,16 +574,60 @@
             </div>
         </div>
         
-        <!-- 베스트셀러 섹션 -->
+        <!-- 통합 판매 분석 섹션 -->
         <div class="table-section">
             <div class="table-header">
-                <h3>🏆 베스트셀러 TOP 10</h3>
-                <span style="font-size: 12px; color: #666;">최근 30일 기준</span>
+                <h3>🎯 통합 판매 분석 시스템</h3>
+                <button class="btn btn-primary btn-sm" onclick="loadMarketIntelligence()">
+                    🤖 AI 마케팅 제안 받기
+                </button>
             </div>
-            <div id="bestSellersContainer" style="margin-top: 15px;">
-                <div class="loading" style="text-align: center; padding: 20px;">
-                    <div class="loading-spinner"></div>
-                    <p>베스트셀러 분석 중...</p>
+            
+            <!-- 주간 분석 -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                <div>
+                    <h4 style="margin-bottom: 10px;">📈 주간 베스트셀러 TOP 10</h4>
+                    <div id="weeklyBestSellers" class="product-list">
+                        <div class="loading" style="text-align: center; padding: 20px;">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h4 style="margin-bottom: 10px;">📉 주간 워스트셀러 TOP 10</h4>
+                    <div id="weeklyWorstSellers" class="product-list">
+                        <div class="loading" style="text-align: center; padding: 20px;">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 어제 실시간 분석 -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
+                <div>
+                    <h4 style="margin-bottom: 10px;">🔥 어제 베스트셀러 TOP 10</h4>
+                    <div id="yesterdayBestSellers" class="product-list">
+                        <div class="loading" style="text-align: center; padding: 20px;">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h4 style="margin-bottom: 10px;">❄️ 어제 워스트셀러 TOP 10</h4>
+                    <div id="yesterdayWorstSellers" class="product-list">
+                        <div class="loading" style="text-align: center; padding: 20px;">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI 마케팅 제안 -->
+            <div id="aiSuggestionsContainer" style="margin-top: 30px; display: none;">
+                <h4>🤖 AI 마케팅 제안</h4>
+                <div id="aiSuggestions" class="ai-suggestions">
+                    <!-- AI 제안이 여기에 표시됩니다 -->
                 </div>
             </div>
         </div>
@@ -1331,6 +1375,192 @@
                 console.error('재고 통계 로드 오류:', error);
             }
         }
+        
+        // 통합 판매 분석 로드
+        async function loadMarketIntelligence() {
+            try {
+                // 판매 성과 데이터 가져오기
+                const response = await fetch('/api/market-intel/performance-analysis');
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 주간 베스트셀러 표시
+                    displayProductList('weeklyBestSellers', data.weekly.best, true);
+                    displayProductList('weeklyWorstSellers', data.weekly.worst, false);
+                    
+                    // 어제 베스트셀러 표시
+                    displayProductList('yesterdayBestSellers', data.yesterday.best, true);
+                    displayProductList('yesterdayWorstSellers', data.yesterday.worst, false);
+                    
+                    // AI 제안 버튼 활성화
+                    document.querySelector('button[onclick="loadMarketIntelligence()"]').textContent = '🤖 AI 제안 업데이트';
+                    
+                    // AI 제안 가져오기
+                    getAISuggestions(data);
+                }
+            } catch (error) {
+                console.error('마켓 인텔리전스 로드 오류:', error);
+            }
+        }
+        
+        // 상품 리스트 표시 함수
+        function displayProductList(containerId, products, isBest) {
+            const container = document.getElementById(containerId);
+            
+            if (!products || products.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">데이터가 없습니다.</div>';
+                return;
+            }
+            
+            let html = '<div style="display: grid; gap: 8px;">';
+            
+            products.forEach((product, index) => {
+                const bgColor = isBest ? 
+                    (index === 0 ? '#e3f2fd' : '#f5f5f5') : 
+                    (index === 0 ? '#ffebee' : '#f5f5f5');
+                
+                html += `
+                    <div style="display: flex; align-items: center; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; background: ${bgColor};">
+                        <div style="width: 25px; height: 25px; background: ${isBest ? '#1976d2' : '#d32f2f'}; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 10px;">
+                            ${index + 1}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 14px; font-weight: 500;">${product.product_name || product.product_name}</div>
+                            <div style="font-size: 12px; color: #666;">
+                                ${isBest ? 
+                                    `판매: ${product.quantity || 0}개 | 매출: ₩${(product.revenue || 0).toLocaleString()}` :
+                                    `재고: ${product.quantity || 0}개 | ${product.days_since_launch || 0}일간 판매 0`
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        // AI 제안 가져오기
+        async function getAISuggestions(performanceData) {
+            try {
+                const response = await fetch('/api/market-intel/ai-suggestions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(performanceData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayAISuggestions(data.suggestions);
+                    document.getElementById('aiSuggestionsContainer').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('AI 제안 로드 오류:', error);
+            }
+        }
+        
+        // AI 제안 표시
+        function displayAISuggestions(suggestions) {
+            const container = document.getElementById('aiSuggestions');
+            let html = '<div style="display: grid; gap: 20px;">';
+            
+            // 긴급 프로모션
+            if (suggestions.urgent_promotions && suggestions.urgent_promotions.length > 0) {
+                html += '<div>';
+                html += '<h5 style="color: #d32f2f; margin-bottom: 10px;">🚨 긴급 프로모션</h5>';
+                html += '<div style="display: grid; gap: 10px;">';
+                
+                suggestions.urgent_promotions.forEach(promo => {
+                    html += `
+                        <div style="padding: 15px; background: #fff3e0; border: 1px solid #ff9800; border-radius: 8px;">
+                            <div style="font-weight: 600; margin-bottom: 5px;">${promo.title}</div>
+                            <div style="font-size: 14px; color: #666;">${promo.reason}</div>
+                            <div style="margin-top: 10px;">
+                                <span style="background: #ff5722; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                                    ${promo.discount}% 할인
+                                </span>
+                                <button onclick="executePromotion(${JSON.stringify(promo).replace(/"/g, '&quot;')})" 
+                                        style="margin-left: 10px; padding: 4px 12px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    실행
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div></div>';
+            }
+            
+            // 트렌드 전략
+            if (suggestions.trend_strategies && suggestions.trend_strategies.length > 0) {
+                html += '<div>';
+                html += '<h5 style="color: #1976d2; margin-bottom: 10px;">📊 트렌드 활용 전략</h5>';
+                html += '<div style="display: grid; gap: 10px;">';
+                
+                suggestions.trend_strategies.forEach(strategy => {
+                    html += `
+                        <div style="padding: 15px; background: #e3f2fd; border: 1px solid #2196f3; border-radius: 8px;">
+                            <div style="font-weight: 600; margin-bottom: 5px;">${strategy.product}</div>
+                            <div style="font-size: 14px; color: #666;">${strategy.strategy}</div>
+                            <div style="font-size: 13px; color: #1976d2; margin-top: 5px;">${strategy.action}</div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div></div>';
+            }
+            
+            // 원본 응답이 있으면 표시
+            if (suggestions.raw_response) {
+                html += `
+                    <div style="padding: 15px; background: #f5f5f5; border-radius: 8px;">
+                        <h5>AI 원본 응답</h5>
+                        <pre style="white-space: pre-wrap; font-size: 12px;">${suggestions.raw_response}</pre>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        // 프로모션 실행
+        async function executePromotion(promotion) {
+            if (!confirm(`"${promotion.title}" 프로모션을 실행하시겠습니까?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/market-intel/execute-promotion', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(promotion)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('프로모션이 성공적으로 등록되었습니다.');
+                    console.log('실행 계획:', data.execution_plan);
+                } else {
+                    alert('프로모션 실행 실패: ' + data.error);
+                }
+            } catch (error) {
+                console.error('프로모션 실행 오류:', error);
+                alert('프로모션 실행 중 오류가 발생했습니다.');
+            }
+        }
+        
+        // 초기 로드시 마켓 인텔리전스도 함께 로드
+        setTimeout(() => {
+            loadMarketIntelligence();
+        }, 3000);
         
         // 베스트셀러 로드
         async function loadBestSellers() {

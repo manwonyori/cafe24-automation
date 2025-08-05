@@ -110,6 +110,9 @@ dmypy.json
 # Project specific
 config/.env
 # config/oauth_token.json  # 임시로 주석 처리
+config/.api_key
+config/encrypted_apis.json
+setup_api_keys.py
 logs/
 cache/
 *.log
