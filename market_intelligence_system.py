@@ -67,21 +67,25 @@ class MarketIntelligenceSystem:
     def _get_worst_sellers(self, days=7):
         """워스트셀러 상품 분석"""
         try:
-            headers = self.get_headers()
-            mall_id = self.get_mall_id()
+            from enhanced_products_api import ProductAPI
+            product_api = ProductAPI(self.get_headers, self.get_mall_id)
             
             # 모든 상품 조회
-            url = f"https://{mall_id}.cafe24api.com/api/v2/admin/products"
-            params = {
-                'limit': 500,
-                'fields': 'product_no,product_name,price,quantity,created_date'
-            }
-            
             all_products = []
             offset = 0
+            limit = 500
             
             while True:
-                params['offset'] = offset
+                headers = self.get_headers()
+                mall_id = self.get_mall_id()
+                url = f"https://{mall_id}.cafe24api.com/api/v2/admin/products"
+                
+                params = {
+                    'limit': limit,
+                    'offset': offset,
+                    'embed': 'discountprice'
+                }
+                
                 response = requests.get(url, headers=headers, params=params)
                 
                 if response.status_code == 200:
@@ -89,11 +93,14 @@ class MarketIntelligenceSystem:
                     products = data.get('products', [])
                     all_products.extend(products)
                     
-                    if len(products) < params['limit']:
+                    if len(products) < limit:
                         break
-                    offset += params['limit']
+                    offset += limit
                 else:
+                    logger.error(f"Failed to get products: {response.status_code}")
                     break
+            
+            logger.info(f"Total products found: {len(all_products)}")
             
             # 판매 데이터와 매칭하여 판매 0인 상품 찾기
             from sales_analytics import SalesAnalytics
@@ -108,33 +115,50 @@ class MarketIntelligenceSystem:
             for order in orders:
                 items = order.get('items', [])
                 for item in items:
-                    sold_products.add(item.get('product_no'))
+                    product_no = item.get('product_no')
+                    if product_no:
+                        sold_products.add(str(product_no))
+            
+            logger.info(f"Sold products in last {days} days: {len(sold_products)}")
             
             # 판매되지 않은 상품 필터링
             worst_sellers = []
-            for product in all_products:
-                if product.get('product_no') not in sold_products:
-                    # 등록된지 최소 7일 이상 된 상품만
-                    created_date = product.get('created_date', '')
-                    if created_date:
-                        created = datetime.fromisoformat(created_date.replace('Z', '+00:00'))
-                        if (datetime.now(pytz.UTC) - created).days >= days:
-                            worst_sellers.append({
-                                'product_no': product.get('product_no'),
-                                'product_name': product.get('product_name'),
-                                'price': float(product.get('price', 0)),
-                                'quantity': int(product.get('quantity', 0)),
-                                'days_since_launch': (datetime.now(pytz.UTC) - created).days,
-                                'sales_count': 0
-                            })
+            current_time = datetime.now(KST)
             
-            # 재고가 많은 순으로 정렬
+            for product in all_products:
+                product_no = str(product.get('product_no', ''))
+                
+                # 판매되지 않은 상품인지 확인
+                if product_no not in sold_products:
+                    # 재고가 있는 상품만 (재고가 0이면 판매할 수 없으므로 제외)
+                    stock_quantity = int(product.get('stock_quantity', 0))
+                    if stock_quantity > 0:
+                        # 상품 정보 추가
+                        product_info = {
+                            'product_no': product_no,
+                            'product_name': product.get('product_name', ''),
+                            'price': float(product.get('price', 0)),
+                            'quantity': stock_quantity,
+                            'days_since_launch': days,  # 정확한 날짜가 없으므로 분석 기간으로 표시
+                            'sales_count': 0,
+                            'display': product.get('display', 'T')  # 진열 상태
+                        }
+                        
+                        # 진열된 상품만 포함 (display = 'T')
+                        if product_info['display'] == 'T':
+                            worst_sellers.append(product_info)
+            
+            # 재고가 많은 순으로 정렬하고 상위 10개만 반환
             worst_sellers.sort(key=lambda x: x['quantity'], reverse=True)
             
-            return worst_sellers
+            logger.info(f"Worst sellers found: {len(worst_sellers[:10])}")
+            
+            return worst_sellers[:10]
             
         except Exception as e:
             logger.error(f"Error getting worst sellers: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return []
     
     def _get_daily_best_sellers(self, days=1):
@@ -144,8 +168,84 @@ class MarketIntelligenceSystem:
         return sales.get_best_sellers(days=days)
     
     def _get_daily_worst_sellers(self, days=1):
-        """일간 워스트셀러"""
-        return self._get_worst_sellers(days=days)
+        """어제 워스트셀러 - 어제 하루 동안 판매되지 않은 상품"""
+        try:
+            from enhanced_products_api import ProductAPI
+            product_api = ProductAPI(self.get_headers, self.get_mall_id)
+            
+            # 모든 활성 상품 조회 (재고가 있고 진열된 상품)
+            all_products = []
+            offset = 0
+            limit = 500
+            
+            while True:
+                headers = self.get_headers()
+                mall_id = self.get_mall_id()
+                url = f"https://{mall_id}.cafe24api.com/api/v2/admin/products"
+                
+                params = {
+                    'limit': limit,
+                    'offset': offset,
+                    'display': 'T'  # 진열된 상품만
+                }
+                
+                response = requests.get(url, headers=headers, params=params)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    products = data.get('products', [])
+                    all_products.extend(products)
+                    
+                    if len(products) < limit:
+                        break
+                    offset += limit
+                else:
+                    break
+            
+            # 어제 날짜 계산
+            yesterday_end = datetime.now(KST).replace(hour=0, minute=0, second=0, microsecond=0)
+            yesterday_start = yesterday_end - timedelta(days=1)
+            
+            # 어제 판매 데이터 가져오기
+            from sales_analytics import SalesAnalytics
+            sales = SalesAnalytics(self.get_headers, self.get_mall_id)
+            yesterday_orders = sales.get_date_range_orders(yesterday_start, yesterday_end)
+            
+            # 어제 판매된 상품 목록
+            sold_yesterday = set()
+            for order in yesterday_orders:
+                items = order.get('items', [])
+                for item in items:
+                    product_no = item.get('product_no')
+                    if product_no:
+                        sold_yesterday.add(str(product_no))
+            
+            # 어제 판매되지 않은 상품 필터링
+            worst_sellers = []
+            
+            for product in all_products:
+                product_no = str(product.get('product_no', ''))
+                stock_quantity = int(product.get('stock_quantity', 0))
+                
+                # 재고가 있지만 어제 판매되지 않은 상품
+                if product_no not in sold_yesterday and stock_quantity > 0:
+                    worst_sellers.append({
+                        'product_no': product_no,
+                        'product_name': product.get('product_name', ''),
+                        'price': float(product.get('price', 0)),
+                        'quantity': stock_quantity,
+                        'days_since_launch': 1,
+                        'sales_count': 0
+                    })
+            
+            # 재고가 많은 순으로 정렬
+            worst_sellers.sort(key=lambda x: x['quantity'], reverse=True)
+            
+            return worst_sellers[:10]
+            
+        except Exception as e:
+            logger.error(f"Error getting daily worst sellers: {str(e)}")
+            return []
     
     def get_ai_marketing_suggestions(self, performance_data):
         """Claude AI를 활용한 마케팅 제안"""
