@@ -130,26 +130,26 @@ class MarketIntelligenceSystem:
                 
                 # 판매되지 않은 상품인지 확인
                 if product_no not in sold_products:
-                    # 재고가 있는 상품만 (재고가 0이면 판매할 수 없으므로 제외)
-                    stock_quantity = int(product.get('stock_quantity', 0))
-                    if stock_quantity > 0:
+                    # 진열된 상품만 포함 (display = 'T')
+                    display_status = product.get('display', 'T')
+                    selling_status = product.get('selling', 'T')
+                    
+                    if display_status == 'T':  # 진열된 상품만
                         # 상품 정보 추가
                         product_info = {
                             'product_no': product_no,
                             'product_name': product.get('product_name', ''),
                             'price': float(product.get('price', 0)),
-                            'quantity': stock_quantity,
-                            'days_since_launch': days,  # 정확한 날짜가 없으므로 분석 기간으로 표시
+                            'quantity': 1,  # 재고 정보가 없으므로 1로 설정
+                            'days_since_launch': days,
                             'sales_count': 0,
-                            'display': product.get('display', 'T')  # 진열 상태
+                            'display': display_status,
+                            'selling': selling_status
                         }
-                        
-                        # 진열된 상품만 포함 (display = 'T')
-                        if product_info['display'] == 'T':
-                            worst_sellers.append(product_info)
+                        worst_sellers.append(product_info)
             
-            # 재고가 많은 순으로 정렬하고 상위 10개만 반환
-            worst_sellers.sort(key=lambda x: x['quantity'], reverse=True)
+            # 상품번호 순으로 정렬하고 상위 10개만 반환
+            worst_sellers.sort(key=lambda x: int(x['product_no']), reverse=True)
             
             logger.info(f"Worst sellers found: {len(worst_sellers[:10])}")
             
@@ -227,19 +227,25 @@ class MarketIntelligenceSystem:
                 product_no = str(product.get('product_no', ''))
                 stock_quantity = int(product.get('stock_quantity', 0))
                 
-                # 재고가 있지만 어제 판매되지 않은 상품
-                if product_no not in sold_yesterday and stock_quantity > 0:
-                    worst_sellers.append({
-                        'product_no': product_no,
-                        'product_name': product.get('product_name', ''),
-                        'price': float(product.get('price', 0)),
-                        'quantity': stock_quantity,
-                        'days_since_launch': 1,
-                        'sales_count': 0
-                    })
+                # 어제 판매되지 않은 상품
+                if product_no not in sold_yesterday:
+                    display_status = product.get('display', 'T')
+                    selling_status = product.get('selling', 'T')
+                    
+                    if display_status == 'T':  # 진열된 상품만
+                        worst_sellers.append({
+                            'product_no': product_no,
+                            'product_name': product.get('product_name', ''),
+                            'price': float(product.get('price', 0)),
+                            'quantity': 1,  # 재고 정보가 없으므로 1로 설정
+                            'days_since_launch': 1,
+                            'sales_count': 0,
+                            'display': display_status,
+                            'selling': selling_status
+                        })
             
-            # 재고가 많은 순으로 정렬
-            worst_sellers.sort(key=lambda x: x['quantity'], reverse=True)
+            # 상품번호 순으로 정렬
+            worst_sellers.sort(key=lambda x: int(x['product_no']), reverse=True)
             
             return worst_sellers[:10]
             
