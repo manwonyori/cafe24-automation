@@ -678,6 +678,18 @@ sales_analytics = SalesAnalytics(get_headers, get_mall_id)
 register_sales_routes(sales_bp, sales_analytics)
 app.register_blueprint(sales_bp, url_prefix='/api/sales')
 
+# CSV Import/Export API 초기화
+from product_csv_import_export import CSVProductManager, register_csv_routes, csv_bp
+csv_manager = CSVProductManager(get_headers, get_mall_id)
+register_csv_routes(csv_bp, csv_manager)
+app.register_blueprint(csv_bp, url_prefix='/api/csv')
+
+# Margin Export Enhancement API 초기화
+from margin_export_enhancement import MarginExportManager, register_margin_export_routes, margin_export_bp
+margin_export_manager = MarginExportManager(get_headers, get_mall_id)
+register_margin_export_routes(margin_export_bp, margin_export_manager)
+app.register_blueprint(margin_export_bp, url_prefix='/api/margin')
+
 
 # OAuth Callback 엔드포인트
 @app.route('/callback')

@@ -545,12 +545,14 @@
                 </div>
                 
                 <div style="display: flex; gap: 10px; margin-top: 30px;">
+                    <button type="button" class="btn btn-info" onclick="previewMarginChanges()">미리보기</button>
                     <button type="submit" class="btn btn-primary" style="flex: 1;">
                         가격 수정 실행
                     </button>
                     <button type="button" class="btn btn-secondary" onclick="closeBulkPriceModal()" style="flex: 1;">
                         취소
                     </button>
+                    <button type="button" class="btn btn-success" onclick="exportMarginUpdatedProducts()">CSV 다운로드</button>
                 </div>
             </form>
         </div>
@@ -1008,6 +1010,121 @@
                 loadingBtn.disabled = false;
             }
         }
+        
+        // 마진 변경 미리보기
+        async function previewMarginChanges() {
+            if (selectedProducts.size === 0) {
+                alert('상품을 선택해주세요.');
+                return;
+            }
+            
+            const targetMargin = parseFloat(document.getElementById('targetMargin').value);
+            const updateType = document.getElementById('updateType').value;
+            
+            if (!targetMargin) {
+                alert('목표 마진율을 입력해주세요.');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/margin/preview-changes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        product_nos: Array.from(selectedProducts),
+                        target_margin: targetMargin,
+                        update_type: updateType
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showPreviewModal(data.preview);
+                } else {
+                    alert('미리보기 중 오류가 발생했습니다.');
+                }
+            } catch (error) {
+                alert('미리보기 중 오류가 발생했습니다.');
+                console.error(error);
+            }
+        }
+        
+        // 미리보기 모달 표시
+        function showPreviewModal(preview) {
+            let html = '<h4>가격 변경 미리보기</h4><table class="preview-table"><thead><tr>';
+            html += '<th>상품명</th><th>현재가격</th><th>새 가격</th><th>변경액</th><th>변경률</th></tr></thead><tbody>';
+            
+            preview.forEach(item => {
+                html += `<tr>
+                    <td>${item.product_name}</td>
+                    <td>₩${item.current_price.toLocaleString()}</td>
+                    <td>₩${item.new_price.toLocaleString()}</td>
+                    <td>${item.change_amount > 0 ? '+' : ''}₩${item.change_amount.toLocaleString()}</td>
+                    <td>${item.change_percent > 0 ? '+' : ''}${item.change_percent}%</td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            
+            // 간단한 알림으로 표시 (실제로는 모달 창 구현 필요)
+            const previewWindow = window.open('', 'preview', 'width=800,height=600');
+            previewWindow.document.write(html);
+        }
+        
+        // CSV 다운로드
+        async function exportMarginUpdatedProducts() {
+            if (selectedProducts.size === 0) {
+                alert('다운로드할 상품을 선택해주세요.');
+                return;
+            }
+            
+            const targetMargin = parseFloat(document.getElementById('targetMargin').value);
+            const updateType = document.getElementById('updateType').value;
+            
+            if (!targetMargin) {
+                alert('목표 마진율을 입력해주세요.');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/margin/export-updated', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        product_nos: Array.from(selectedProducts),
+                        target_margin: targetMargin,
+                        update_type: updateType
+                    })
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `margin_update_${targetMargin}pct_${new Date().toISOString().split('T')[0]}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    alert('CSV 다운로드 중 오류가 발생했습니다.');
+                }
+            } catch (error) {
+                alert('CSV 다운로드 중 오류가 발생했습니다.');
+                console.error(error);
+            }
+        }
+        
+        // 페이지 로드 시 실행
+        window.onload = function() {
+            loadMarginAnalysis();
+        };
     </script>
 </body>
 </html>

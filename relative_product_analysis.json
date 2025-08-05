@@ -1,0 +1,10 @@
+{
+  "total_products": 118,
+  "mutual_references": 1283,
+  "patterns": {
+    "separator": ";",
+    "format": "상품코드1;상품코드2;상품코드3",
+    "max_related": 42,
+    "empty_related": 2
+  }
+}
