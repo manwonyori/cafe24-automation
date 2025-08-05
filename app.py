@@ -679,6 +679,56 @@ register_sales_routes(sales_bp, sales_analytics)
 app.register_blueprint(sales_bp, url_prefix='/api/sales')
 
 
+# OAuth Callback 엔드포인트
+@app.route('/callback')
+def oauth_callback():
+    """OAuth 인증 콜백"""
+    try:
+        auth_code = request.args.get('code')
+        state = request.args.get('state')
+        error = request.args.get('error')
+        
+        if error:
+            return f"""
+            <html><body>
+            <h1>인증 오류</h1>
+            <p>오류: {error}</p>
+            <p>설명: {request.args.get('error_description', '')}</p>
+            </body></html>
+            """, 400
+        
+        if not auth_code:
+            return """
+            <html><body>
+            <h1>인증 코드 없음</h1>
+            <p>인증 코드가 제공되지 않았습니다.</p>
+            </body></html>
+            """, 400
+        
+        # 성공 페이지
+        return f"""
+        <html><body>
+        <h1>인증 성공!</h1>
+        <p><strong>인증 코드:</strong></p>
+        <textarea rows="3" cols="50" readonly onclick="this.select()">{auth_code}</textarea>
+        <p>이 코드를 복사해서 개발자에게 전달하세요.</p>
+        <p>State: {state}</p>
+        
+        <script>
+        // 자동으로 코드 선택
+        document.querySelector('textarea').select();
+        </script>
+        </body></html>
+        """
+        
+    except Exception as e:
+        return f"""
+        <html><body>
+        <h1>콜백 처리 오류</h1>
+        <p>오류: {str(e)}</p>
+        </body></html>
+        """, 500
+
 # 디버그 라우트 추가
 @app.route('/api/debug/orders')
 @handle_errors
