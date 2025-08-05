@@ -81,57 +81,90 @@ class MarketIntelligenceSystem:
         return result
     
     def _get_worst_sellers(self, days=7):
-        """워스트셀러 상품 분석 - 간단 버전"""
+        """워스트셀러 상품 분석 - 실시간 API 버전"""
         try:
-            # 테스트 데이터로 먼저 시도 - 실제 API가 문제일 수 있음
-            worst_sellers = [
-                {
-                    'product_no': '252',
-                    'product_name': '[인생]땅콩버터오징어 다리250g',
-                    'price': 8100.0,
-                    'quantity': 1,
-                    'days_since_launch': days,
-                    'sales_count': 0
-                },
-                {
-                    'product_no': '251', 
-                    'product_name': '[인생]땅콩버터오징어 몸통250g',
-                    'price': 9000.0,
-                    'quantity': 1,
-                    'days_since_launch': days,
-                    'sales_count': 0
-                },
-                {
-                    'product_no': '250',
-                    'product_name': '[인생]조미오징어입200g', 
-                    'price': 5400.0,
-                    'quantity': 1,
-                    'days_since_launch': days,
-                    'sales_count': 0
-                },
-                {
-                    'product_no': '248',
-                    'product_name': '[인생]가문어통족200g',
-                    'price': 4500.0,
-                    'quantity': 1,
-                    'days_since_launch': days,
-                    'sales_count': 0
-                },
-                {
-                    'product_no': '247',
-                    'product_name': '[인생]맥반석 땅콩오징어200g',
-                    'price': 6300.0,
-                    'quantity': 1,
-                    'days_since_launch': days,
-                    'sales_count': 0
-                }
-            ]
+            logger.info(f"Getting worst sellers for {days} days...")
             
-            logger.info(f"Returning {len(worst_sellers)} test worst sellers for {days} days")
-            return worst_sellers
+            # 1. 베스트셀러에서 판매된 상품 목록 가져오기
+            from sales_analytics import SalesAnalytics
+            sales = SalesAnalytics(self.get_headers, self.get_mall_id)
+            
+            end_date = datetime.now(KST) 
+            start_date = end_date - timedelta(days=days)
+            
+            # 주문 데이터에서 판매된 상품 추출
+            orders = sales.get_date_range_orders(start_date, end_date)
+            logger.info(f"Found {len(orders)} orders in {days} days")
+            
+            sold_product_nos = set()
+            for order in orders:
+                items = order.get('items', [])
+                for item in items:
+                    product_no = item.get('product_no')
+                    if product_no:
+                        sold_product_nos.add(str(product_no))
+            
+            logger.info(f"Sold products: {len(sold_product_nos)}")
+            
+            # 2. 모든 상품 목록 가져오기 (간단한 방식)
+            headers = self.get_headers()
+            mall_id = self.get_mall_id()
+            
+            all_products = []
+            offset = 0
+            limit = 100
+            
+            while len(all_products) < 200:  # 최대 200개만
+                url = f"https://{mall_id}.cafe24api.com/api/v2/admin/products"        
+                params = {
+                    'limit': limit,
+                    'offset': offset,
+                    'display': 'T'  # 진열 상품만
+                }
+                
+                response = requests.get(url, headers=headers, params=params)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    products = data.get('products', [])
+                    all_products.extend(products)
+                    
+                    if len(products) < limit:
+                        break
+                    offset += limit
+                else:
+                    logger.error(f"Products API error: {response.status_code}")
+                    break
+            
+            logger.info(f"Total products: {len(all_products)}")
+            
+            # 3. 판매되지 않은 상품 필터링
+            worst_sellers = []
+            for product in all_products:
+                product_no = str(product.get('product_no', ''))
+                
+                if product_no not in sold_product_nos:
+                    worst_sellers.append({
+                        'product_no': product_no,
+                        'product_name': product.get('product_name', f'상품 {product_no}'),
+                        'price': float(product.get('price', 0)),
+                        'quantity': 1,  # 기본값
+                        'days_since_launch': days,
+                        'sales_count': 0
+                    })
+            
+            # 상품번호 역순 정렬 (최신 상품 우선)
+            worst_sellers.sort(key=lambda x: int(x['product_no']), reverse=True)
+            
+            result = worst_sellers[:10]
+            logger.info(f"Returning {len(result)} worst sellers")
+            
+            return result
             
         except Exception as e:
             logger.error(f"Error getting worst sellers: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return []
     
     def _get_daily_best_sellers(self, days=1):
@@ -141,57 +174,80 @@ class MarketIntelligenceSystem:
         return sales.get_best_sellers(days=days)
     
     def _get_daily_worst_sellers(self, days=1):
-        """어제 워스트셀러 - 간단 버전"""
+        """어제 워스트셀러 - 실시간 API 버전"""
         try:
-            # 테스트 데이터로 먼저 시도
-            worst_sellers = [
-                {
-                    'product_no': '246',
-                    'product_name': '[인생]치킨스킨가라아게1kg',
-                    'price': 9000.0,
-                    'quantity': 1,
-                    'days_since_launch': 1,
-                    'sales_count': 0
-                },
-                {
-                    'product_no': '245',
-                    'product_name': '[인생]테바나카1kg',
-                    'price': 16200.0,
-                    'quantity': 1,
-                    'days_since_launch': 1,
-                    'sales_count': 0
-                },
-                {
-                    'product_no': '244',
-                    'product_name': '[인생]옛날치킨700g',
-                    'price': 8100.0,
-                    'quantity': 1,
-                    'days_since_launch': 1,
-                    'sales_count': 0
-                },
-                {
-                    'product_no': '243',
-                    'product_name': '[인생]옛날통닭600g',
-                    'price': 7200.0,
-                    'quantity': 1,
-                    'days_since_launch': 1,
-                    'sales_count': 0
-                },
-                {
-                    'product_no': '242',
-                    'product_name': '[인생]핫치킨 퀘사디아380g',
-                    'price': 8100.0,
-                    'quantity': 1,
-                    'days_since_launch': 1,
-                    'sales_count': 0
-                }
-            ]
+            logger.info("Getting yesterday worst sellers...")
             
-            logger.info(f"Returning {len(worst_sellers)} test daily worst sellers")
-            return worst_sellers
+            # 어제 날짜 계산 (한국 시간)
+            now_kst = datetime.now(KST)
+            yesterday_end = now_kst.replace(hour=0, minute=0, second=0, microsecond=0)
+            yesterday_start = yesterday_end - timedelta(days=1)
+            
+            logger.info(f"Yesterday period: {yesterday_start} ~ {yesterday_end}")
+            
+            # 어제 판매된 상품 목록
+            from sales_analytics import SalesAnalytics
+            sales = SalesAnalytics(self.get_headers, self.get_mall_id)
+            
+            yesterday_orders = sales.get_date_range_orders(yesterday_start, yesterday_end)
+            logger.info(f"Found {len(yesterday_orders)} orders yesterday")
+            
+            sold_yesterday = set()
+            for order in yesterday_orders:
+                items = order.get('items', [])
+                for item in items:
+                    product_no = item.get('product_no')
+                    if product_no:
+                        sold_yesterday.add(str(product_no))
+            
+            logger.info(f"Products sold yesterday: {len(sold_yesterday)}")
+            
+            # 진열 상품 중 어제 판매되지 않은 것들
+            headers = self.get_headers()
+            mall_id = self.get_mall_id()
+            
+            url = f"https://{mall_id}.cafe24api.com/api/v2/admin/products"
+            params = {
+                'limit': 100,
+                'offset': 0,
+                'display': 'T'  # 진열 상품만
+            }
+            
+            response = requests.get(url, headers=headers, params=params)
+            
+            if response.status_code == 200:
+                data = response.json()
+                products = data.get('products', [])
+                
+                worst_sellers = []
+                for product in products:
+                    product_no = str(product.get('product_no', ''))
+                    
+                    if product_no not in sold_yesterday:
+                        worst_sellers.append({
+                            'product_no': product_no,
+                            'product_name': product.get('product_name', f'상품 {product_no}'),
+                            'price': float(product.get('price', 0)),
+                            'quantity': 1,
+                            'days_since_launch': 1,
+                            'sales_count': 0
+                        })
+                
+                # 상품번호 역순 정렬
+                worst_sellers.sort(key=lambda x: int(x['product_no']), reverse=True)
+                
+                result = worst_sellers[:10]
+                logger.info(f"Returning {len(result)} yesterday worst sellers")
+                
+                return result
+            else:
+                logger.error(f"Products API error: {response.status_code}")
+                return []
             
         except Exception as e:
             logger.error(f"Error getting daily worst sellers: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return []
     
     def get_ai_marketing_suggestions(self, performance_data):

@@ -244,14 +244,35 @@ class SalesAnalytics:
             for item in items:
                 product_no = item.get('product_no')
                 if product_no:
-                    # 가격 필드 확인 - API 버전에 따라 다를 수 있음
-                    price = float(item.get('product_price', 0) or item.get('price', 0) or 0)
-                    quantity = int(item.get('quantity', 0))
+                    # 다양한 가격 필드 시도
+                    price = (
+                        float(item.get('product_price', 0) or 0) or
+                        float(item.get('price', 0) or 0) or
+                        float(item.get('unit_price', 0) or 0) or
+                        float(item.get('payment_amount', 0) or 0) or
+                        0
+                    )
                     
-                    product_sales[product_no]['quantity'] += quantity
-                    product_sales[product_no]['revenue'] += price * quantity
-                    product_sales[product_no]['product_name'] = item.get('product_name', '')
-                    product_sales[product_no]['orders'] += 1
+                    # 다양한 수량 필드 시도  
+                    quantity = (
+                        int(item.get('quantity', 0) or 0) or
+                        int(item.get('product_quantity', 0) or 0) or
+                        1  # 기본값
+                    )
+                    
+                    # 상품명 필드 시도
+                    product_name = (
+                        item.get('product_name') or
+                        item.get('product_display_name') or
+                        item.get('variant_name') or
+                        f"상품번호 {product_no}"
+                    )
+                    
+                    if quantity > 0:  # 수량이 있는 것만 집계
+                        product_sales[product_no]['quantity'] += quantity
+                        product_sales[product_no]['revenue'] += price * quantity
+                        product_sales[product_no]['product_name'] = product_name
+                        product_sales[product_no]['orders'] += 1
         
         # 매출 기준 정렬
         sorted_products = sorted(
