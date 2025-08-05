@@ -1,0 +1,78 @@
+# 인증 정보 파일
+config/credentials.json
+.env
+
+# 로그 파일
+logs/
+*.log
+
+# 스크린샷
+data/screenshots/
+screenshots/
+
+# 다운로드 파일
+downloads/
+data/downloads/
+
+# Chrome 드라이버
+drivers/
+chromedriver*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 가상환경
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 임시 파일
+*.tmp
+*.temp
+temp_*
+
+# CSV 파일 (샘플 제외)
+data/csv/*.csv
+!data/csv/*sample*.csv
+!data/csv/*example*.csv
+
+# 테스트
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 기타
+*.bak
+*.backup

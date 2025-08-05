@@ -1,15 +1,50 @@
-# 카페24 쇼핑몰 완전 자동화 시스템 🚀
+# Cafe24 Automation System 🚀
 
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![Docker](https://img.shields.io/badge/docker-enabled-brightgreen.svg)](https://www.docker.com/)
+[![Selenium](https://img.shields.io/badge/selenium-4.16+-green.svg)](https://selenium-python.readthedocs.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🌟 한국어 자연어 명령으로 쇼핑몰을 관리하세요!
+> 🎯 Cafe24 쇼핑몰 운영을 위한 완전 자동화 시스템 - **API와 Selenium 두 가지 방식 제공**
+
+## ⚡ 빠른 실행
+
+### 가격 수정 (추천)
+```bash
+# Selenium 방식으로 확실한 가격 수정
+cd selenium-method
+python main.py --task single_price --product-code P00000IB --price 13500
+```
+
+### CSV 업로드
+```bash  
+# CSV 파일로 대량 가격 수정
+cd selenium-method
+python main.py --task price_update --csv data/csv/price_update_sample_jumbo.csv
+```
+
+## 📋 프로젝트 개요
+
+이 프로젝트는 Cafe24 쇼핑몰의 상품 관리, 가격 수정, 재고 관리 등을 자동화하는 통합 시스템입니다. **API 방식**과 **Selenium 방식** 두 가지 방법을 제공하여 상황에 맞게 선택할 수 있습니다.
+
+## 🏗️ 프로젝트 구조
 
 ```
-"오늘 신규 주문 보여줘" → 자동으로 API 호출 → 결과 표시
-"재고 부족 상품 확인" → 실시간 재고 분석 → 알림 전송
-"일일 매출 리포트 생성" → 데이터 수집 → 보고서 자동 생성
+cafe24-automation/
+├── api-method/          # 🔹 API 기반 자동화 (빠르지만 가격수정 불가)  
+├── selenium-method/     # 🔸 브라우저 자동화 (느리지만 모든 기능 지원)
+│   ├── modules/        # 핵심 자동화 모듈
+│   │   ├── browser.py        # 브라우저 관리
+│   │   ├── login.py          # 로그인 자동화
+│   │   ├── price_updater.py  # 가격 수정 ⭐
+│   │   └── csv_uploader.py   # CSV 업로드
+│   ├── utils/          # 유틸리티
+│   ├── config/         # 설정 파일
+│   ├── data/csv/       # CSV 데이터 파일
+│   └── main.py         # 실행 파일
+├── docs/               # 📚 통합 문서
+│   ├── comparison/     # 두 방식 비교 분석
+│   └── guides/         # 사용 가이드
+└── README.md          # 현재 문서
 ```
 
 ## 🎯 주요 기능
@@ -40,37 +75,41 @@
 
 ## 🚀 빠른 시작
 
-### 원클릭 배포
-
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/manwonyori/cafe24)
-
-[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/manwonyori/cafe24)
-
-[![Deploy to Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/manwonyori/cafe24)
-
-### 로컬 설치 (5분 소요)
-
-1. **프로젝트 클론**
+### 1. 프로젝트 클론
 ```bash
-git clone https://github.com/manwonyori/cafe24.git
-cd cafe24
+git clone https://github.com/manwonyori/cafe24-automation.git
+cd cafe24-automation
 ```
 
-2. **환경 설정**
+### 2. Selenium 방식 설정 (가격 수정용)
 ```bash
-cp config/.env.template config/.env
-# .env 파일을 열어 카페24 API 정보 입력
-```
+cd selenium-method
 
-3. **Docker로 실행** (권장)
-```bash
-docker-compose up -d
-```
-
-또는 **Python으로 실행**
-```bash
+# 패키지 설치
 pip install -r requirements.txt
-python src/main.py
+
+# 설정 파일 생성
+cp config/credentials.example.json config/credentials.json
+# 또는 환경변수 설정
+cp .env.example .env
+```
+
+### 3. 인증 정보 입력
+```json
+// config/credentials.json
+{
+  "cafe24": {
+    "admin_id": "your_admin_id",
+    "admin_password": "your_admin_password",
+    "mall_id": "manwonyori"
+  }
+}
+```
+
+### 4. 실행
+```bash
+# 점보떡볶이 가격을 13,500원으로 수정
+python main.py --task single_price --product-code P00000IB --price 13500
 ```
 
 ## ⚙️ 환경 설정

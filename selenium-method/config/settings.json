@@ -1,0 +1,43 @@
+{
+  "browser": {
+    "headless": false,
+    "window_size": [1920, 1080],
+    "implicit_wait": 10,
+    "page_load_timeout": 30,
+    "download_directory": "./downloads",
+    "disable_gpu": true,
+    "no_sandbox": true,
+    "disable_dev_shm_usage": true,
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  },
+  "cafe24": {
+    "admin_url": "https://manwonyori.cafe24.com/admin",
+    "login_url": "https://manwonyori.cafe24.com/admin/php/shop1/s_login.php",
+    "product_list_url": "https://manwonyori.cafe24.com/admin/php/shop1/p/product_list.php",
+    "csv_upload_url": "https://manwonyori.cafe24.com/admin/php/shop1/p/product_csv_upload.php",
+    "max_retries": 3,
+    "retry_delay": 5,
+    "action_delay": 1,
+    "csv_process_delay": 10
+  },
+  "paths": {
+    "csv_folder": "./data/csv",
+    "screenshot_folder": "./data/screenshots",
+    "log_folder": "./logs",
+    "download_folder": "./downloads",
+    "chromedriver_folder": "./drivers"
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    "date_format": "%Y-%m-%d %H:%M:%S",
+    "max_file_size": "10MB",
+    "backup_count": 5
+  },
+  "performance": {
+    "batch_size": 100,
+    "parallel_workers": 1,
+    "memory_limit_mb": 2048,
+    "cpu_limit_percent": 80
+  }
+}
