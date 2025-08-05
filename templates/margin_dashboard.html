@@ -475,6 +475,14 @@
                 </div>
             </div>
             
+            <!-- 검색 기능 추가 -->
+            <div class="search-container" style="margin: 20px 0;">
+                <input type="text" id="productSearch" placeholder="상품명, 상품코드로 검색..." 
+                       style="width: 100%; padding: 10px 15px; font-size: 16px; border: 1px solid #ddd; 
+                              border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
+                       onkeyup="searchProducts()">
+            </div>
+            
             <div class="table-container">
                 <div id="productsLoading" class="loading">
                     <div class="loading-spinner"></div>
@@ -599,6 +607,7 @@
     <script>
         // 전역 변수
         let allProducts = [];
+        let filteredProducts = [];
         let selectedProducts = new Set();
         let currentRangeFilter = null;
         let marginAnalysis = null;
@@ -607,6 +616,50 @@
         window.addEventListener('load', () => {
             loadMarginAnalysis();
         });
+        
+        // 상품 검색 함수
+        function searchProducts() {
+            const searchTerm = document.getElementById('productSearch').value.toLowerCase();
+            
+            if (!searchTerm) {
+                // 검색어가 없으면 전체 또는 현재 필터된 상품 표시
+                if (currentRangeFilter) {
+                    const rangeProducts = marginAnalysis.margin_ranges[currentRangeFilter].products;
+                    displayProducts(rangeProducts);
+                } else {
+                    displayProducts(allProducts);
+                }
+                return;
+            }
+            
+            // 검색어로 필터링
+            const searchResults = allProducts.filter(product => {
+                const productName = (product.product_name || '').toLowerCase();
+                const productCode = (product.product_code || '').toLowerCase();
+                const productNo = (product.product_no || '').toString().toLowerCase();
+                
+                return productName.includes(searchTerm) || 
+                       productCode.includes(searchTerm) ||
+                       productNo.includes(searchTerm);
+            });
+            
+            // 현재 마진율 필터가 있으면 추가 필터링
+            if (currentRangeFilter && marginAnalysis) {
+                const rangeProducts = marginAnalysis.margin_ranges[currentRangeFilter].products;
+                const rangeProductIds = new Set(rangeProducts.map(p => p.product_no));
+                filteredProducts = searchResults.filter(p => rangeProductIds.has(p.product_no));
+            } else {
+                filteredProducts = searchResults;
+            }
+            
+            displayProducts(filteredProducts);
+            
+            // 검색 결과 수 표시
+            const title = document.getElementById('productSectionTitle');
+            if (searchTerm) {
+                title.textContent = `검색 결과: ${filteredProducts.length}개`;
+            }
+        }
         
         // 마진율 분석 데이터 로드
         async function loadMarginAnalysis() {
@@ -727,14 +780,18 @@
             let products = [];
             if (rangeName && marginAnalysis.margin_ranges[rangeName]) {
                 products = marginAnalysis.margin_ranges[rangeName].products;
+                currentRangeFilter = rangeName;
             } else {
                 // 전체 상품
+                // 모든 구간의 상품을 합침
                 for (const range of Object.values(marginAnalysis.margin_ranges)) {
                     products = products.concat(range.products);
                 }
+                // 전체 상품 저장
+                allProducts = products;
+                currentRangeFilter = null;
             }
             
-            allProducts = products;
             displayProducts(products);
             
             document.getElementById('productsLoading').style.display = 'none';
