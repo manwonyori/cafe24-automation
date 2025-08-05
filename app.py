@@ -851,9 +851,9 @@ if __name__ == '__main__':
     print(f"Dashboard: http://localhost:{port}/dashboard")
     print(f"Token Debug: http://localhost:{port}/api/debug/token")
     print("==" * 30)
-    print("✓ 자동 토큰 갱신: 30분마다")
-    print("✓ 에러 로깅: app.log")
-    print("✓ API 캐싱: 1분")
+    print("[OK] Auto token refresh: every 30 minutes")
+    print("[OK] Error logging: app.log")
+    print("[OK] API caching: 1 minute")
     print("==" * 30)
     
     app.run(host='0.0.0.0', port=port, debug=False)

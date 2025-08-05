@@ -167,7 +167,7 @@ class Cafe24AutoTokenManager:
             interval = 30  # 기본값
             
         schedule.every(interval).minutes.do(self.check_and_refresh)
-        print(f"✓ 자동 토큰 갱신 설정: {interval}분마다 실행")
+        print(f"[OK] Auto token refresh scheduled: every {interval} minutes")
         
         # 즉시 한 번 체크
         self.check_and_refresh()
