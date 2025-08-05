@@ -685,6 +685,55 @@ register_market_intel_routes(market_intel_bp, market_intel_system)
 app.register_blueprint(market_intel_bp, url_prefix='/api/market-intel')
 
 # 디버그 라우트 추가
+@app.route('/api/debug/orders')
+@handle_errors
+def debug_orders():
+    """주문 데이터 디버그"""
+    try:
+        from sales_analytics import SalesAnalytics
+        from datetime import datetime, timedelta
+        import pytz
+        
+        KST = pytz.timezone('Asia/Seoul')
+        
+        sales = SalesAnalytics(get_headers, get_mall_id)
+        
+        # 최근 7일 데이터
+        end_date = datetime.now(KST)
+        start_date = end_date - timedelta(days=7)
+        
+        orders = sales.get_date_range_orders(start_date, end_date)
+        
+        # 상품 데이터 분석
+        items_summary = []
+        for order in orders[:5]:  # 처음 5개 주문만
+            items = order.get('items', [])
+            for item in items:
+                items_summary.append({
+                    'product_no': item.get('product_no'),
+                    'product_name': item.get('product_name'),
+                    'quantity': item.get('quantity'),
+                    'product_price': item.get('product_price'),
+                    'price': item.get('price')
+                })
+        
+        return jsonify({
+            'success': True,
+            'period': f"{start_date.strftime('%Y-%m-%d')} ~ {end_date.strftime('%Y-%m-%d')}",
+            'total_orders': len(orders),
+            'sample_items': items_summary[:10],
+            'debug_info': {
+                'mall_id': get_mall_id(),
+                'has_token': bool(get_headers().get('Authorization'))
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/debug/token')
 @handle_errors
 def debug_token():
