@@ -40,7 +40,6 @@ from margin_management import margin_bp, MarginManager, register_margin_routes
 from vendor_management_debug import vendor_bp, VendorManager, register_vendor_routes
 from oauth_routes import oauth_bp, register_oauth_routes
 from sales_analytics import sales_bp, SalesAnalytics, register_sales_routes
-from market_intelligence_system import market_intel_bp, MarketIntelligenceSystem, register_market_intel_routes
 
 # 토큰 매니저 초기화 및 자동 갱신 시작
 token_manager = get_token_manager()
@@ -679,10 +678,6 @@ sales_analytics = SalesAnalytics(get_headers, get_mall_id)
 register_sales_routes(sales_bp, sales_analytics)
 app.register_blueprint(sales_bp, url_prefix='/api/sales')
 
-# Market Intelligence System 초기화
-market_intel_system = MarketIntelligenceSystem(get_headers, get_mall_id)
-register_market_intel_routes(market_intel_bp, market_intel_system)
-app.register_blueprint(market_intel_bp, url_prefix='/api/market-intel')
 
 # 디버그 라우트 추가
 @app.route('/api/debug/orders')

@@ -1,0 +1,210 @@
+{
+  "summary": {
+    "start_time": "2025-08-05T10:49:12.719725+09:00",
+    "end_time": "2025-08-05T10:49:33.192299+09:00",
+    "duration_seconds": 20.472574,
+    "total_tests": 18,
+    "passed_tests": 8,
+    "failed_tests": 10,
+    "success_rate": 44.44
+  },
+  "test_results": {
+    "환경변수_확인": {
+      "success": false,
+      "message": "환경변수 0개 발견, 5개 누락",
+      "data": {
+        "found": [],
+        "missing": [
+          "CAFE24_CLIENT_ID",
+          "CAFE24_CLIENT_SECRET",
+          "CAFE24_ACCESS_TOKEN",
+          "CAFE24_MALL_ID",
+          "CAFE24_REDIRECT_URI"
+        ],
+        "values": {
+          "CAFE24_CLIENT_ID": null,
+          "CAFE24_CLIENT_SECRET": null,
+          "CAFE24_ACCESS_TOKEN": null,
+          "CAFE24_MALL_ID": null,
+          "CAFE24_REDIRECT_URI": null
+        }
+      },
+      "timestamp": "2025-08-05T10:49:12.738270+09:00"
+    },
+    "토큰파일_유효성": {
+      "success": false,
+      "message": "토큰이 만료되었습니다",
+      "data": {
+        "file": "oauth_token.json",
+        "mall_id": "manwonyori",
+        "client_id": "9bPpABwHB5mtkCEAfIeuNK",
+        "expires_at": "2025-08-05T09:51:14.075658.000",
+        "scopes": [
+          "mall.read_product",
+          "mall.write_product",
+          "mall.read_order",
+          "mall.write_order",
+          "mall.read_customer"
+        ]
+      },
+      "timestamp": "2025-08-05T10:49:12.742576+09:00"
+    },
+    "인증정보_수집": {
+      "success": true,
+      "message": "Mall ID: manwonyori, Token: ***ml3O7DipgB",
+      "data": {
+        "mall_id": "manwonyori",
+        "token_length": 22,
+        "headers_set": true
+      },
+      "timestamp": "2025-08-05T10:49:12.744257+09:00"
+    },
+    "기본인증_테스트": {
+      "success": false,
+      "message": "응답 코드: 401, 메시지: {\"error\":{\"code\":401,\"message\":\"access_token time expired. (invalid_token)\"}}",
+      "data": {
+        "url": "https://manwonyori.cafe24api.com/api/v2/admin/products/count",
+        "status_code": 401,
+        "response_preview": "{\"error\":{\"code\":401,\"message\":\"access_token time expired. (invalid_token)\"}}"
+      },
+      "timestamp": "2025-08-05T10:49:13.119703+09:00"
+    },
+    "상품API_목록조회": {
+      "success": false,
+      "message": "응답 코드: 401, 내용: {\"error\":{\"code\":401,\"message\":\"access_token time expired. (invalid_token)\"}}",
+      "data": null,
+      "timestamp": "2025-08-05T10:49:13.461501+09:00"
+    },
+    "주문API_오늘주문": {
+      "success": false,
+      "message": "응답 코드: 401 ({\"error\":{\"code\":401,\"message\":\"access_token time expired. (invalid_token)\"}})",
+      "data": null,
+      "timestamp": "2025-08-05T10:49:13.817904+09:00"
+    },
+    "매출분석_베스트셀러": {
+      "success": true,
+      "message": "주간 베스트셀러 0개 조회",
+      "data": {
+        "best_seller_count": 0,
+        "top_3": []
+      },
+      "timestamp": "2025-08-05T10:49:14.296533+09:00"
+    },
+    "매출분석_월별비교": {
+      "success": true,
+      "message": "월별 매출 비교 완료: 이번달 0원",
+      "data": {
+        "current_month_sales": 0,
+        "growth": {
+          "mom": 0,
+          "yoy": 0
+        }
+      },
+      "timestamp": "2025-08-05T10:49:15.323317+09:00"
+    },
+    "마켓인텔_성과분석": {
+      "success": true,
+      "message": "성과 분석 완료: 베스트 0개, 워스트 0개",
+      "data": {
+        "weekly_best_count": 0,
+        "weekly_worst_count": 0,
+        "ai_enabled": true
+      },
+      "timestamp": "2025-08-05T10:49:18.252803+09:00"
+    },
+    "배포서비스_cafe24-automation.onrender.com": {
+      "success": true,
+      "message": "응답 코드: 200",
+      "data": {
+        "url": "https://cafe24-automation.onrender.com",
+        "status_code": 200,
+        "response_preview": "{\"endpoints\":{\"categories\":\"/api/categories\",\"dashboard\":\"/dashboard\",\"margin\":\"/margin-dashboard\",\"orders\":\"/api/orders/today\",\"products\":\"/api/products\",\"status\":\"/api/status\",\"vendor\":\"/vendor-dashboard\"},\"message\":\"Cafe24 Automation API Server\",\"status\":\"running\",\"version\":\"2.0\"}\n"
+      },
+      "timestamp": "2025-08-05T10:49:18.731908+09:00"
+    },
+    "배포서비스_status": {
+      "success": true,
+      "message": "응답 코드: 200",
+      "data": {
+        "url": "https://cafe24-automation.onrender.com/api/status",
+        "status_code": 200,
+        "response_preview": "{\"api_test\":{\"authenticated\":false,\"reachable\":true,\"status_code\":401},\"apis\":{\"cafe24\":\"ready\"},\"server\":{\"uptime\":1754358560.445709,\"version\":\"2.0\"},\"status\":\"ok\",\"timestamp\":\"2025-08-05T01:49:20.445693\",\"token_status\":{\"exists\":true,\"info\":{\"auto_refresh\":true,\"expires_in\":28914.131505},\"valid\":t"
+      },
+      "timestamp": "2025-08-05T10:49:19.738941+09:00"
+    },
+    "배포서비스_health": {
+      "success": true,
+      "message": "응답 코드: 200",
+      "data": {
+        "url": "https://cafe24-automation.onrender.com/health",
+        "status_code": 200,
+        "response_preview": "{\"status\":\"healthy\",\"timestamp\":\"2025-08-05T01:49:21.318209\",\"token_status\":true}\n"
+      },
+      "timestamp": "2025-08-05T10:49:20.603755+09:00"
+    },
+    "로컬서버_root": {
+      "success": false,
+      "message": "연결 실패: HTTPConnectionPool(host='127.0.0.1', port=5000): Max retries exceeded with url: / (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001C72C2FAE90>: Failed to establish a new connection: [WinError 10061] 대상 컴퓨터에서 연결을 거부했으므로 연결하지 못했습니다')) (서버가 실행되지 않았을 수 있음)",
+      "data": null,
+      "timestamp": "2025-08-05T10:49:30.834543+09:00"
+    },
+    "로컬서버_api": {
+      "success": false,
+      "message": "연결 실패: HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /api/status (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001C72C2FA5D0>: Failed to establish a new connection: [WinError 10061] 대상 컴퓨터에서 연결을 거부했으므로 연결하지 못했습니다')) (서버가 실행되지 않았을 수 있음)",
+      "data": null,
+      "timestamp": "2025-08-05T10:49:28.793900+09:00"
+    },
+    "컴포넌트_통합_모듈로드": {
+      "success": true,
+      "message": "모듈 로드: 성공 5개, 실패 0개",
+      "data": {
+        "imported": [
+          "auto_token_manager",
+          "enhanced_products_api",
+          "sales_analytics",
+          "market_intelligence_system",
+          "config"
+        ],
+        "failed": []
+      },
+      "timestamp": "2025-08-05T10:49:33.191435+09:00"
+    },
+    "데이터흐름_진단": {
+      "success": false,
+      "message": "총 7개 문제 발견: [인증 문제] 토큰이 만료되었거나 잘못된 설정입니다., [API 연결 문제] Cafe24 API 호출에서 오류가 발생했습니다., [네트워크 문제] 서버 연결이나 배포에 문제가 있습니다.",
+      "data": {
+        "failed_tests": [
+          "환경변수_확인",
+          "토큰파일_유효성",
+          "기본인증_테스트",
+          "상품API_목록조회",
+          "주문API_오늘주문",
+          "로컬서버_root",
+          "로컬서버_api"
+        ],
+        "auth_issues": [
+          "토큰파일_유효성",
+          "기본인증_테스트"
+        ],
+        "api_issues": [
+          "상품API_목록조회",
+          "주문API_오늘주문"
+        ],
+        "module_issues": [],
+        "network_issues": [
+          "로컬서버_root",
+          "로컬서버_api"
+        ],
+        "diagnosis": [
+          "[인증 문제] 토큰이 만료되었거나 잘못된 설정입니다.",
+          "[API 연결 문제] Cafe24 API 호출에서 오류가 발생했습니다.",
+          "[네트워크 문제] 서버 연결이나 배포에 문제가 있습니다."
+        ]
+      },
+      "timestamp": "2025-08-05T10:49:33.192248+09:00"
+    }
+  },
+  "recommendations": [
+    "[긴급] 기본 설정에 심각한 문제가 있습니다. 토큰과 API 설정을 다시 확인하세요."
+  ]
+}
