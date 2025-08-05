@@ -472,6 +472,7 @@ def download_template():
 def upload_price_csv():
     """CSV 파일로 가격 일괄 수정"""
     try:
+        import pandas as pd
         if 'file' not in request.files:
             return jsonify({'success': False, 'error': 'CSV 파일을 선택해주세요'}), 400
         
