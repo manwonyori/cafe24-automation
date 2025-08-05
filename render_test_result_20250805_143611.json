@@ -1,0 +1,94 @@
+{
+  "test_time": "2025-08-05T14:36:11.581684",
+  "server": "https://cafe24-automation.onrender.com",
+  "results": {
+    "/": {
+      "status": "OK",
+      "data": {
+        "endpoints": {
+          "categories": "/api/categories",
+          "dashboard": "/dashboard",
+          "margin": "/margin-dashboard",
+          "orders": "/api/orders/today",
+          "products": "/api/products",
+          "status": "/api/status",
+          "vendor": "/vendor-dashboard"
+        },
+        "message": "Cafe24 Automation API Server",
+        "status": "running",
+        "version": "2.0"
+      }
+    },
+    "/api/status": {
+      "status": "OK",
+      "data": {
+        "api_test": {
+          "authenticated": false,
+          "reachable": true,
+          "status_code": 401
+        },
+        "apis": {
+          "cafe24": "ready"
+        },
+        "server": {
+          "uptime": 1754372167.0834951,
+          "version": "2.0"
+        },
+        "status": "ok",
+        "timestamp": "2025-08-05T05:36:07.083482",
+        "token_status": {
+          "exists": true,
+          "info": {
+            "auto_refresh": true,
+            "expires_in": 32127.151126
+          },
+          "valid": true
+        }
+      }
+    },
+    "/health": {
+      "status": "OK",
+      "data": {
+        "status": "healthy",
+        "timestamp": "2025-08-05T05:36:07.888425",
+        "token_status": true
+      }
+    },
+    "/api/debug/token": {
+      "status": "OK",
+      "data": {
+        "auto_refresh_active": true,
+        "env_has_token": true,
+        "env_token_preview": "***OCywnap5cA",
+        "file_has_token": true,
+        "mall_id": "manwonyori",
+        "manager_has_token": true,
+        "next_refresh": "30분마다 자동 갱신",
+        "remaining_minutes": 535.422317,
+        "remaining_seconds": 32125.33902
+      }
+    },
+    "/api/products": {
+      "status": "ERROR 401"
+    },
+    "/api/products/all": {
+      "status": "OK",
+      "count": "dict"
+    },
+    "/api/margin/analysis": {
+      "status": "OK",
+      "count": "dict"
+    },
+    "/api/margin/products": {
+      "status": "ERROR 404"
+    },
+    "/api/execute": {
+      "status": "ERROR 404"
+    }
+  },
+  "summary": {
+    "success": 6,
+    "error": 3,
+    "exception": 0
+  }
+}

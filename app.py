@@ -467,6 +467,92 @@ def download_template():
         download_name=filename
     )
 
+@app.route('/api/upload-price-csv', methods=['POST'])
+@handle_errors
+def upload_price_csv():
+    """CSV 파일로 가격 일괄 수정"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'error': 'CSV 파일을 선택해주세요'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'CSV 파일을 선택해주세요'}), 400
+        
+        if not file.filename.endswith('.csv'):
+            return jsonify({'success': False, 'error': 'CSV 파일만 업로드 가능합니다'}), 400
+        
+        # CSV 파일 읽기
+        df = pd.read_csv(file, encoding='utf-8-sig')
+        
+        # 필수 컬럼 확인
+        required_columns = ['상품코드', '판매가']
+        if not all(col in df.columns for col in required_columns):
+            return jsonify({
+                'success': False, 
+                'error': f'필수 컬럼이 없습니다. 필요: {required_columns}'
+            }), 400
+        
+        success_count = 0
+        failed_count = 0
+        errors = []
+        
+        headers = get_headers()
+        mall_id = get_mall_id()
+        
+        # 각 행 처리
+        for idx, row in df.iterrows():
+            try:
+                product_code = str(row['상품코드'])  # P00000IB 형식
+                new_price = str(int(float(row['판매가'])))
+                
+                # 상품코드로 product_no 찾기
+                search_url = f"https://{mall_id}.cafe24api.com/api/v2/admin/products"
+                params = {'product_code': product_code, 'limit': 1}
+                response = requests.get(search_url, headers=headers, params=params)
+                
+                if response.status_code == 200:
+                    products = response.json().get('products', [])
+                    if products:
+                        product_no = products[0].get('product_no')
+                        
+                        # 가격 수정
+                        update_url = f"https://{mall_id}.cafe24api.com/api/v2/admin/products/{product_no}"
+                        update_data = {
+                            "request": {
+                                "product": {
+                                    "price": new_price
+                                }
+                            }
+                        }
+                        
+                        response = requests.put(update_url, headers=headers, json=update_data)
+                        if response.status_code == 200:
+                            success_count += 1
+                        else:
+                            failed_count += 1
+                            errors.append(f"상품 {product_code}: API 오류 {response.status_code}")
+                    else:
+                        failed_count += 1
+                        errors.append(f"상품 {product_code}: 상품을 찾을 수 없음")
+                else:
+                    failed_count += 1
+                    errors.append(f"상품 {product_code}: 조회 실패")
+                    
+            except Exception as e:
+                failed_count += 1
+                errors.append(f"행 {idx+1}: {str(e)}")
+        
+        return jsonify({
+            'success': True,
+            'success_count': success_count,
+            'failed_count': failed_count,
+            'errors': errors[:10]  # 처음 10개 에러만
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/generate-price-excel', methods=['GET'])
 @handle_errors
 def generate_price_excel():

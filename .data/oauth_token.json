@@ -1,0 +1,19 @@
+{
+  "access_token": "yhep7daQIqcUnu3pBhsyBB",
+  "refresh_token": "Y39VGzKtMxYnXZMr0yLjfF",
+  "expires_at": "2025-08-05T16:37:10.197740.000",
+  "refresh_token_expires_at": "2025-08-19T14:37:10.197740.000",
+  "client_id": "9bPpABwHB5mtkCEAfIeuNK",
+  "client_secret": "qtnWtUk2OZzua1SRa7gN3A",
+  "mall_id": "manwonyori",
+  "user_id": "manwonyori",
+  "scopes": [
+    "mall.read_product",
+    "mall.write_product",
+    "mall.read_order",
+    "mall.write_order",
+    "mall.read_customer"
+  ],
+  "issued_at": "2025-08-05T14:37:10.197740.000",
+  "shop_no": "1"
+}
